@@ -6,19 +6,7 @@
 
 struct header {
     const uint32_t protocol;
-    uint16_t cnt;
-    const uint8_t dist;
-
-    union flags {
-        struct {
-            uint8_t req_ask :1;
-            uint8_t data    :1;
-            uint8_t whoami  :1;
-        };
-
-        uint8_t val;
-    } flags;
-
+    uint32_t cnt;
     uint32_t uid_src;
     const uint32_t uid_dest;
     const uint32_t path[4];
@@ -44,12 +32,11 @@ enum chunk_id {
 
 struct chunk {
     uint16_t id;
-    uint16_t type;
     uint16_t size;
     uint8_t data[];
 };
 
-static_assert(sizeof(struct chunk) == 6, "Error in struct chunk");
+static_assert(sizeof(struct chunk) == 4, "Error in struct chunk");
 
 // clang-format off
 struct package_whoami {
@@ -59,8 +46,6 @@ struct package_whoami {
     .header = {
         .protocol = 0x41525541U,
         .cnt = 0,
-        .dist = 0,
-        .flags.whoami = 1,
         .uid_src = 0,
         .uid_dest = 0,
         .path = {0},
