@@ -38,9 +38,9 @@ const uint16_t crc16_tab[256] = {
 
 // clang-format on
 
-// При первом вызове значение CRC16 должно равняться 0xFFFF
-uint16_t crc16(uint16_t crc, const void *buf, uint32_t size)
+uint16_t crc16_calc(const void *buf, uint32_t size)
 {
+    uint16_t crc = 0xFFFF;
     const uint8_t *p = buf;
 
     while (size--) {
@@ -48,4 +48,19 @@ uint16_t crc16(uint16_t crc, const void *buf, uint32_t size)
     }
 
     return crc;
+}
+
+void crc16_add2pack(const void *buf, uint32_t size)
+{
+    uint16_t crc = 0xFFFF;
+    const uint8_t *p = buf;
+
+    // Убираем поле crc из расчета самой crc
+    size -= sizeof(crc);
+
+    while (size--) {
+        crc = crc16_tab[(crc ^ (*p++)) & 0xFF] ^ (crc >> 8);
+    }
+
+    *(uint16_t *)p = crc;
 }
