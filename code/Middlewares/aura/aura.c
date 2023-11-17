@@ -9,10 +9,9 @@ struct header {
     uint32_t cnt;
     uint32_t uid_src;
     const uint32_t uid_dest;
-    const uint32_t path[4];
 };
 
-static_assert(sizeof(struct header) == 32, "Error in struct header");
+static_assert(sizeof(struct header) == 16, "Error in struct header");
 
 enum chunk_type {
     CHUNK_TYPE_CHAR = 1,
@@ -31,7 +30,8 @@ enum chunk_id {
 };
 
 struct chunk {
-    uint16_t id;
+    uint8_t id;
+    uint8_t type;
     uint16_t size;
     uint8_t data[];
 };
@@ -48,7 +48,6 @@ struct package_whoami {
         .cnt = 0,
         .uid_src = 0,
         .uid_dest = 0,
-        .path = {0},
     },
     .crc = 0,
 };
