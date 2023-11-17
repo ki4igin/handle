@@ -84,7 +84,7 @@ int main(void)
         if (LL_TIM_IsActiveFlag_UPDATE(TIM14)) {
             LL_TIM_ClearFlag_UPDATE(TIM14);
             gpio_ledb_toggle();
-            aura_send_whoami();
+            // aura_send_whoami();
         }
         /* Run RFAL Worker */
         rfalWorker();
@@ -106,13 +106,12 @@ void SystemClock_Config(void)
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
     while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_1) {
     }
-    LL_RCC_HSI_Enable();
+    LL_RCC_HSE_Enable();
 
-    /* Wait till HSI is ready */
-    while (LL_RCC_HSI_IsReady() != 1) {
+    /* Wait till HSE is ready */
+    while (LL_RCC_HSE_IsReady() != 1) {
     }
-    LL_RCC_HSI_SetCalibTrimming(16);
-    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI_DIV_2, LL_RCC_PLL_MUL_12);
+    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_5, LL_RCC_PLL_MUL_8);
     LL_RCC_PLL_Enable();
 
     /* Wait till PLL is ready */
@@ -125,8 +124,8 @@ void SystemClock_Config(void)
     /* Wait till System clock is ready */
     while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
     }
-    LL_Init1msTick(48000000);
-    LL_SetSystemCoreClock(48000000);
+    LL_Init1msTick(43392000);
+    LL_SetSystemCoreClock(43392000);
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_PCLK1);
 }
 
