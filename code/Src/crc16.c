@@ -38,6 +38,7 @@ const uint16_t crc16_tab[256] = {
 
 // clang-format on
 
+// При первом вызове значение CRC16 должно равняться 0xFFFF
 uint16_t crc16(uint16_t crc, const void *buf, uint32_t size)
 {
     const uint8_t *p = buf;
