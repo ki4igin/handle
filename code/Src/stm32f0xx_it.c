@@ -65,10 +65,3 @@ void EXTI2_3_IRQHandler(void)
         st25r3911Isr();
     }
 }
-
-/**
- * @brief This function handles DMA1 channel 2 and 3 interrupts.
- */
-void DMA1_Channel2_3_IRQHandler(void)
-{
-}

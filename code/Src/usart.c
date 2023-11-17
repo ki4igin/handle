@@ -51,6 +51,7 @@ void MX_USART1_UART_Init(void)
     LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MEMORY_INCREMENT);
     LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PDATAALIGN_BYTE);
     LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MDATAALIGN_BYTE);
+    LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_3);
 
     /* USART1_TX Init */
     LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
@@ -60,6 +61,11 @@ void MX_USART1_UART_Init(void)
     LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_2, LL_DMA_MEMORY_INCREMENT);
     LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_2, LL_DMA_PDATAALIGN_BYTE);
     LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_2, LL_DMA_MDATAALIGN_BYTE);
+    LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
+
+    /* USART1 interrupt Init */
+    NVIC_SetPriority(USART1_IRQn, 0);
+    NVIC_EnableIRQ(USART1_IRQn);
 
     USART_InitStruct.BaudRate = 115200;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
@@ -74,9 +80,11 @@ void MX_USART1_UART_Init(void)
     LL_USART_SetDEAssertionTime(USART1, 0);
     LL_USART_SetDEDeassertionTime(USART1, 0);
     LL_USART_ConfigAsyncMode(USART1);
+    LL_USART_SetRxTimeout(USART1, 100);
 
     LL_USART_EnableDMAReq_TX(USART1);
     LL_USART_EnableDMAReq_RX(USART1);
+    LL_USART_EnableIT_RTO(USART1);
 
     LL_USART_Enable(USART1);
 }

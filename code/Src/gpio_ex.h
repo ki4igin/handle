@@ -40,7 +40,6 @@
 gpio_on_off_toggle_declare(ledr, LEDS_GPIO_Port, LED_R_Pin)
 gpio_on_off_toggle_declare(ledb, LEDS_GPIO_Port, LED_G_Pin)
 gpio_on_off_toggle_declare(ledg, LEDS_GPIO_Port, LED_B_Pin)
-gpio_on_off_toggle_declare(lock, LOCK_GPIO_Port, LOCK_Pin)
 // clang-format on
 
 #endif
