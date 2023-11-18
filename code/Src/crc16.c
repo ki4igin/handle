@@ -50,10 +50,10 @@ uint16_t crc16_calc(const void *buf, uint32_t size)
     return crc;
 }
 
-void crc16_add2pack(const void *buf, uint32_t size)
+void crc16_add2pack(void *buf, uint32_t size)
 {
     uint16_t crc = 0xFFFF;
-    const uint8_t *p = buf;
+    uint8_t *p = buf;
 
     // Убираем поле crc из расчета самой crc
     size -= sizeof(crc);
@@ -61,6 +61,7 @@ void crc16_add2pack(const void *buf, uint32_t size)
     while (size--) {
         crc = crc16_tab[(crc ^ (*p++)) & 0xFF] ^ (crc >> 8);
     }
-
-    *(uint16_t *)p = crc;
+    // Здесь p может быть невыровненным адресом!!!
+    *p++ = (uint8_t)crc;
+    *p = (uint8_t)(crc >> 8);
 }
