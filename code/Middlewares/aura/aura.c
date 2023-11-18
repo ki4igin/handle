@@ -50,10 +50,6 @@ struct data_status {
     uint8_t card_uid[];
 };
 
-struct crc16 {
-    uint16_t val;
-};
-
 uint32_t aura_flags_pack_received = 0;
 uint32_t uid = 0;
 
@@ -108,7 +104,7 @@ static void aura_send_response(void)
     uint32_t pack_size = sizeof(struct header)
                        + sizeof(struct chunk)
                        + package.chunk.size
-                       + sizeof(struct crc16);
+                       + sizeof(crc16_t);
     crc16_add2pack(&package, pack_size);
     uart_send_array_dma(&package, pack_size);
 }
@@ -149,7 +145,7 @@ void uart_recv_dma_callback(void)
     case STATE_RECV_START: {
         state_recv = STATE_RECV_CHUNK;
         struct chunk *c = &package.chunk;
-        uart_recv_array_dma(package.data, c->size + sizeof(struct crc16));
+        uart_recv_array_dma(package.data, c->size + sizeof(crc16_t));
     } break;
     case STATE_RECV_CHUNK: {
         state_recv = STATE_RECV_CRC;
@@ -157,7 +153,7 @@ void uart_recv_dma_callback(void)
         uint32_t pack_size = sizeof(struct header)
                            + sizeof(struct chunk)
                            + package.chunk.size
-                           + sizeof(struct crc16);
+                           + sizeof(crc16_t);
         if (crc16_is_valid(&package, pack_size)) {
             aura_flags_pack_received = 1;
         } else {

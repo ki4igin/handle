@@ -3,7 +3,9 @@
 
 #include "stm32f0xx.h"
 
-uint16_t crc16_calc(const void *buf, uint32_t size);
+typedef uint16_t crc16_t;
+
+crc16_t crc16_calc(const void *buf, uint32_t size);
 void crc16_add2pack(void *buf, uint32_t size);
 
 inline static uint32_t crc16_is_valid(const void *buf, uint32_t size)
