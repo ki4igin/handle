@@ -25,7 +25,7 @@ void uart_recv_array_dma(void *buf, uint32_t size)
         LL_DMA_CHANNEL_3,
         LL_USART_DMA_GetRegAddr(USART1, LL_USART_DMA_REG_DATA_RECEIVE),
         (uint32_t)buf,
-        LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2));
+        LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_CHANNEL_3));
     LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_3, size);
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_3);
 }

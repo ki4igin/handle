@@ -55,6 +55,7 @@ struct crc16 {
 };
 
 uint32_t aura_flags_pack_received = 0;
+uint32_t uid = 0;
 
 static struct {
     struct header header;
@@ -62,32 +63,21 @@ static struct {
     uint8_t data[128];
 } package;
 
-// static_assert(sizeof(struct chunk) == 4, "Error in struct chunk");
-
-// clang-format off
-struct package_whoami {
-    struct header header;
-    uint16_t crc;
-} package_whoami = {
-    .header = {
-        .protocol = 0x41525541U,
-        .cnt = 0,
-        .uid_src = 0,
-        .uid_dest = 0,
-    },
-    .crc = 0,
+enum state_recv {
+    STATE_RECV_START,
+    STATE_RECV_CHUNK,
+    STATE_RECV_CRC,
 };
 
-// clang-format on
+static enum state_recv state_recv = STATE_RECV_START;
 
-uint32_t uid = 0;
-
-void aura_init(void)
+static void aura_recv_package(void)
 {
-    uid = uid_hash();
+    state_recv = STATE_RECV_START;
+    uart_recv_array_dma(&package, sizeof(struct header) + sizeof(struct chunk));
 }
 
-void aura_create_whoami(void)
+static void aura_create_whoami(void)
 {
     package.chunk.type = CHUNK_TYPE_U32;
     package.chunk.size = sizeof(struct data_whoami);
@@ -97,7 +87,7 @@ void aura_create_whoami(void)
     };
 }
 
-void aura_create_status(void)
+static void aura_create_status(void)
 {
     package.chunk.type = CHUNK_TYPE_U8;
     package.chunk.size = sizeof(struct data_status) + rfid_card_uid.len;
@@ -109,15 +99,26 @@ void aura_create_status(void)
     }
 }
 
+static void aura_send_response(void)
+{
+    static uint32_t cnt = 0;
+    package.header.cnt = cnt++;
+    package.header.uid_dest = package.header.uid_src;
+    package.header.uid_src = uid;
+    uint32_t pack_size = sizeof(struct header)
+                       + sizeof(struct chunk)
+                       + package.chunk.size
+                       + sizeof(struct crc16);
+    crc16_add2pack(&package, pack_size);
+    uart_send_array_dma(&package, pack_size);
+}
+
 void aura_cmd_process(void)
 {
     if (aura_flags_pack_received == 0) {
         return;
     }
-
     aura_flags_pack_received = 0;
-    package.header.uid_dest = package.header.uid_src;
-    package.header.uid_src = uid;
 
     struct chunk *c = &package.chunk;
     switch (c->id) {
@@ -127,29 +128,19 @@ void aura_cmd_process(void)
     case CHUNK_ID_STATUS: {
         aura_create_status();
     } break;
+    default: {
+        aura_recv_package();
+        return;
+    }
     }
 
-    uint32_t pack_size = sizeof(struct header)
-                       + sizeof(struct chunk)
-                       + package.chunk.size
-                       + sizeof(struct crc16);
-    crc16_add2pack(&package, pack_size);
-    uart_send_array_dma(&package, pack_size);
+    aura_send_response();
 }
 
-enum state_recv {
-    STATE_RECV_START,
-    STATE_RECV_CHUNK,
-    STATE_RECV_CRC,
-    STATE_RECV_NOPE,
-};
-
-uint32_t state_recv = STATE_RECV_START;
-
-void aura_recv_package(void)
+void aura_init(void)
 {
-    state_recv = STATE_RECV_START;
-    uart_recv_array_dma(&package, sizeof(struct header) + sizeof(struct chunk));
+    uid = uid_hash();
+    aura_recv_package();
 }
 
 void uart_recv_dma_callback(void)
@@ -158,10 +149,10 @@ void uart_recv_dma_callback(void)
     case STATE_RECV_START: {
         state_recv = STATE_RECV_CHUNK;
         struct chunk *c = &package.chunk;
-        uart_recv_array_dma(c, c->size + sizeof(struct crc16));
+        uart_recv_array_dma(package.data, c->size + sizeof(struct crc16));
     } break;
-    case STATE_RECV_CRC: {
-        state_recv = STATE_RECV_NOPE;
+    case STATE_RECV_CHUNK: {
+        state_recv = STATE_RECV_CRC;
         uart_stop_recv();
         uint32_t pack_size = sizeof(struct header)
                            + sizeof(struct chunk)
@@ -169,10 +160,12 @@ void uart_recv_dma_callback(void)
                            + sizeof(struct crc16);
         if (crc16_is_valid(&package, pack_size)) {
             aura_flags_pack_received = 1;
+        } else {
+            aura_recv_package();
         }
 
     } break;
-    case STATE_RECV_NOPE: {
+    case STATE_RECV_CRC: {
     } break;
     }
 }

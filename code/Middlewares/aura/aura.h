@@ -4,6 +4,6 @@
 #include "stm32f0xx.h"
 
 void aura_init(void);
-void aura_send_whoami(void);
+void aura_cmd_process(void);
 
 #endif

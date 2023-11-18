@@ -46,7 +46,6 @@ int main(void)
     LL_TIM_EnableCounter(TIM14);
     LL_TIM_ClearFlag_UPDATE(TIM14);
 
-    aura_init();
     platformLog("Welcome to aura\n");
     LL_mDelay(100);
 
@@ -80,6 +79,8 @@ int main(void)
     platformLogReg(0x2F);
     platformLogReg(0x2E);
 
+    aura_init();
+
     while (1) {
         if (LL_TIM_IsActiveFlag_UPDATE(TIM14)) {
             LL_TIM_ClearFlag_UPDATE(TIM14);
@@ -94,6 +95,7 @@ int main(void)
         if (card_found) {
             platformLog("ISO14443A/NFC-A, %d UID: %s\r\n", rfid_card_uid.len, hex2Str(rfid_card_uid.val, rfid_card_uid.len));
         }
+        aura_cmd_process();
     }
 }
 
