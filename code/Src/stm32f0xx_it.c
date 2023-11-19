@@ -1,7 +1,9 @@
 #include "main.h"
 #include "stm32f0xx_it.h"
+#include "stm32f0xx_ll_tim.h"
 #include "st25R3911_interrupt.h"
 #include "tick.h"
+#include "locker.h"
 
 /* External variables --------------------------------------------------------*/
 
@@ -63,5 +65,16 @@ void EXTI2_3_IRQHandler(void)
     if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_2) != RESET) {
         LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_2);
         st25r3911Isr();
+    }
+}
+
+/**
+ * @brief This function handles TIM14 global interrupt.
+ */
+void TIM14_IRQHandler(void)
+{
+    if (LL_TIM_IsActiveFlag_UPDATE(TIM14)) {
+        LL_TIM_ClearFlag_UPDATE(TIM14);
+        tim14_update_callback();
     }
 }

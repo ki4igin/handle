@@ -38,6 +38,7 @@ enum chunk_id {
     CHUNK_ID_ADD_CARDS = 2,
     CHUNK_ID_VIEW_CARDS = 3,
     CHUNK_ID_CLEAR_CARDS = 4,
+    CHUNK_ID_OPEN_LOCKER = 5,
 };
 
 struct chunk {
@@ -230,6 +231,10 @@ void aura_cmd_process(void)
     case CHUNK_ID_CLEAR_CARDS: {
         data_clear_cards_t d = keys_clear();
         aura_create_resp_clear_cards(d);
+    } break;
+    case CHUNK_ID_OPEN_LOCKER: {
+        locker_open();
+        aura_create_status();
     } break;
     default: {
         aura_recv_package();
