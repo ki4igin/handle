@@ -41,6 +41,11 @@ const uint16_t crc16_tab[256] = {
 crc16_t crc16_calc(const void *buf, uint32_t size)
 {
     uint16_t crc = 0xFFFF;
+    return crc16_calc_continue(crc, buf, size);
+}
+
+crc16_t crc16_calc_continue(crc16_t crc, const void *buf, uint32_t size)
+{
     const uint8_t *p = buf;
 
     while (size--) {

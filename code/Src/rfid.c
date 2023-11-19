@@ -28,7 +28,8 @@ static uint32_t stateArray[] = {
     ST_WAIT_WAKEUP,
 };
 
-struct rfid_card_uid rfid_card_uid = {0};
+__ALIGNED(4)
+union rfid_card_uid rfid_card_uid = {0};
 
 static uint32_t doWakeUp = true;
 static uint32_t state = ST_FIELD_OFF;
@@ -110,8 +111,9 @@ uint32_t poll_NFCA(void)
                 /*********************************************/
                 /* NFC-A device found                        */
                 /* NFCID/UID is contained in: nfcaDev.nfcId1 */
+                rfid_card_uid.raw[1] = 0;
                 rfid_card_uid.len = nfcaDevList[0].nfcId1Len;
-                for (uint32_t i = 0; i < rfid_card_uid.len; i++) {
+                for (uint32_t i = 0; i < nfcaDevList[0].nfcId1Len; i++) {
                     rfid_card_uid.val[i] = nfcaDevList[0].nfcId1[i];
                 }
             }

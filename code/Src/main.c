@@ -12,6 +12,7 @@
 #include "st25r3911_com.h"
 #include "st25r3911.h"
 #include "aura.h"
+#include "keys.h"
 
 void SystemClock_Config(void);
 
@@ -79,6 +80,7 @@ int main(void)
     platformLogReg(0x2F);
     platformLogReg(0x2E);
 
+    keys_init();
     aura_init();
 
     while (1) {
@@ -93,7 +95,8 @@ int main(void)
         /* Run Demo Application */
         uint32_t card_found = rfid_cycle();
         if (card_found) {
-            platformLog("ISO14443A/NFC-A, %d UID: %s\r\n", rfid_card_uid.len, hex2Str(rfid_card_uid.val, rfid_card_uid.len));
+            platformLog("ISO14443A/NFC-A, UID: %s\n",
+                        hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
         }
         aura_cmd_process();
     }

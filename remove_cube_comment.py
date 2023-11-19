@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 
-def process_file(file_path):
+def clear_file(file_path):
     with open(file_path, 'r') as file:
         content = file.read()
 
@@ -31,17 +31,18 @@ def process_file(file_path):
     subprocess.run(['clang-format', '-i', file_path])
 
 
-def process_files_in_directory(directory_path):
+def clear_files(path):
     # Получаем список всех файлов в указанном каталоге
-    files = [f for f in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, f))]
+    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
     # Перебираем каждый файл и обрабатываем его
     for file_name in files:
-        file_path = os.path.join(directory_path, file_name)
-        process_file(file_path)
+        file_path = os.path.join(path, file_name)
+        clear_file(file_path)
 
 if __name__ == "__main__":    
-    directory_path = 'code/Src'
-    print(f"Cleaning files in {directory_path}")
-    process_files_in_directory(directory_path)
+    paths = {'code/Src', 'code/Middlewares/aura'}
+    for path in paths:
+        print(f"Cleaning files in {path}")
+        clear_files(path)
     print("Complete")
