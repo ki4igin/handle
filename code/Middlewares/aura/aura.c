@@ -58,7 +58,7 @@ struct data_view {
 };
 
 typedef uint16_t data_add_cards_t;
-typedef uint8_t data_clear_cards_t;
+typedef uint16_t data_clear_cards_t;
 
 // struct data_add_cards {
 //     uint8_t cnt;
