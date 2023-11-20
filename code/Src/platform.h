@@ -57,6 +57,8 @@
 * GLOBAL DEFINES
 ******************************************************************************
 */
+#define LOG_ON
+
 #define ST25R391X_SS_PIN          SPI_NSS_Pin  /*!< GPIO pin used for ST25R3911 SPI SS                */
 #define ST25R391X_SS_PORT         SPI_NSS_Port /*!< GPIO port used for ST25R3911 SPI SS port          */
 
@@ -128,7 +130,11 @@
 #define platformSpiDeselect()                 platformGpioSet(ST25R391X_SS_PORT, ST25R391X_SS_PIN)   /*!< SPI SS\CS: Chip|Slave Deselect              */
 #define platformSpiTxRx(txBuf, rxBuf, len)    spi_txrx(txBuf, rxBuf, len)                            /*!< SPI transceive                              */
 
-#define platformLog(...)                      logPrint(__VA_ARGS__) /*!< Log  method                                 */
+#ifdef LOG_ON
+#define platformLog(...) logPrint(__VA_ARGS__) /*!< Log  method                                 */
+#else
+#define platformLog(...)
+#endif
 
 #define platformLogReg(_reg)                                  \
     do {                                                      \
