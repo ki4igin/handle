@@ -104,7 +104,7 @@ static void aura_recv_package(void)
 
 static void aura_create_whoami(void)
 {
-    package.chunk.type = CHUNK_TYPE_U8;
+    package.chunk.type = CHUNK_TYPE_U32;
     package.chunk.size = sizeof(struct data_whoami);
     *(struct data_whoami *)package.data = (struct data_whoami){
         .id_handle = AURA_HANDLE_ID,
