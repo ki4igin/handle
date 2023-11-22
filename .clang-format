@@ -26,6 +26,7 @@ AlwaysBreakTemplateDeclarations: false
 BinPackArguments: true
 BinPackParameters: true
 BitFieldColonSpacing: Before
+BracedInitializerIndentWidth: 4
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false

@@ -52,7 +52,7 @@ void logPrint(const char *format, ...)
 
     pStr = gLogMsg;
 
-    uart_send_array_dma(pStr, len);
+    uart_send_dma(pStr, len);
 }
 
 /*******************************************************************************/
