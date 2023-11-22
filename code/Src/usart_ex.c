@@ -2,7 +2,7 @@
 #include "stm32f0xx_ll_dma.h"
 #include "stm32f0xx_ll_usart.h"
 
-void uart_send_array_dma(void *buf, uint32_t size)
+void uart_send_dma(void *buf, uint32_t size)
 {
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
     LL_DMA_ClearFlag_GI2(DMA1);
@@ -17,7 +17,7 @@ void uart_send_array_dma(void *buf, uint32_t size)
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
 }
 
-void uart_recv_array_dma(void *buf, uint32_t size)
+void uart_recv_dma(void *buf, uint32_t size)
 {
     LL_USART_EnableRxTimeout(USART1);
     LL_DMA_ConfigAddresses(
