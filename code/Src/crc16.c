@@ -1,4 +1,5 @@
 #include "crc16.h"
+#include "buf.h"
 
 // clang-format off
 const uint16_t crc16_tab[256] = {
@@ -55,9 +56,8 @@ crc16_t crc16_calc_continue(crc16_t crc, const void *buf, uint32_t size)
     return crc;
 }
 
-void crc16_add2pack(void *buf, uint32_t size)
+static void crc16_add2pack_core(crc16_t crc, void *buf, uint32_t size)
 {
-    uint16_t crc = 0xFFFF;
     uint8_t *p = buf;
 
     // Убираем поле crc из расчета самой crc
@@ -69,4 +69,21 @@ void crc16_add2pack(void *buf, uint32_t size)
     // Здесь p может быть невыровненным адресом!!!
     *p++ = (uint8_t)crc;
     *p = (uint8_t)(crc >> 8);
+}
+
+void crc16_add2pack(void *buf, uint32_t size)
+{
+    uint16_t crc = 0xFFFF;
+    crc16_add2pack_core(crc, buf, size);
+}
+
+void crc16_add2list(struct buf_list *list)
+{
+    uint16_t crc = 0xFFFF;
+    
+    for (uint32_t i = 0; i < list->count - 1; i++) {
+        crc = crc16_calc_continue(crc, list->bufs[i].p, list->bufs[i].size);
+    }
+    struct buf *last_buf = &list->bufs[list->count - 1];
+    crc16_add2pack_core(crc, last_buf->p, last_buf->size);
 }

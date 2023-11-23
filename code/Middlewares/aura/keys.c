@@ -78,17 +78,28 @@ int_for_end:
     return 0;
 }
 
-uint32_t key_save(union rfid_card_uid *uid)
+static uint32_t key_save(union rfid_card_uid *uid)
 {
-    uint32_t err = (key_is_valid(uid) << 8)
-                 | (addr_is_invalid(keys_head.new_key) << 9);
+    uint32_t err = (key_is_valid(uid) << 0)
+                 | (addr_is_invalid(keys_head.new_key) << 1);
 
     if (err == 0) {
         flash_memcpy_u16(uid, keys_head.new_key, sizeof(*uid));
         keys_head.new_key++;
         keys_head.cnt++;
     }
-    return err | keys_head.cnt;
+    return err;
+}
+
+struct keys_res keys_save(union rfid_card_uid *uid, uint32_t count)
+{
+    struct keys_res res = {0};
+
+    for (uint32_t i = 0; i < count; i++) {
+        res.err |= key_save(&uid[i]);
+    }
+    res.val = keys_head.cnt;
+    return res;
 }
 
 uint32_t keys_get_count(void)
