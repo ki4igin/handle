@@ -46,7 +46,7 @@
 #include "timer.h"
 #include "tick.h"
 #include "spi.h"
-#include "log.h")))
+#include "log.h"
 #include "gpio_ex.h"
 #include "stm32f0xx_ll_gpio.h"
 #include "st_types.h"
