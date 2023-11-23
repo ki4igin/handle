@@ -56,24 +56,24 @@ enum chunk_data_type {
 
     CHUNK_TYPE_CARD_UID = 18,
     CHUNK_TYPE_CARD_UID_ARR = 19,
+    CHUNK_TYPE_CARD_RANGE = 20,
 };
 
 enum chunk_id {
     CHUNK_ID_TYPE_SENSOR = 1,
     CHUNK_ID_UIDS_ARRAY = 2,
-    CHUNK_ID_STATUS_LOCKER,
-    CHUNK_ID_CARD_UID,
-    CHUNK_ID_ERR,
-    CHUNK_ID_CARD_SAVE_COUNT,
-    CHUNK_ID_CARD_RANGE,
-    CHUNK_ID_CARD_UID_ARR,
-    CHUNK_ID_CARD_CLEAR,
-    CHUNK_ID_MAX,
 
-    // CHUNK_ID_ADD_CARDS = 2,
-    // CHUNK_ID_VIEW_CARDS = 3,
-    // CHUNK_ID_CLEAR_CARDS = 4,
-    // CHUNK_ID_OPEN_LOCKER = 5,
+    CHUNK_ID_ERR,
+
+    CHUNK_ID_STATUS_LOCKER,
+
+    CHUNK_ID_CARD_UID,
+    CHUNK_ID_CARD_UID_ARR_WRITE,
+    CHUNK_ID_CARD_UID_ARR_READ,
+    CHUNK_ID_CARD_RANGE,
+
+    CHUNK_ID_CARD_SAVE_COUNT,
+    CHUNK_ID_CARD_CLEAR,
 };
 
 const enum chunk_data_type table_type[] = {
@@ -83,7 +83,8 @@ const enum chunk_data_type table_type[] = {
     [CHUNK_ID_ERR] = CHUNK_TYPE_U16,
     [CHUNK_ID_CARD_SAVE_COUNT] = CHUNK_TYPE_U16,
     [CHUNK_ID_CARD_RANGE] = CHUNK_TYPE_U16,
-    [CHUNK_ID_CARD_UID_ARR] = CHUNK_TYPE_CARD_UID_ARR,
+    [CHUNK_ID_CARD_UID_ARR_READ] = CHUNK_TYPE_CARD_RANGE,
+    [CHUNK_ID_CARD_UID_ARR_WRITE] = CHUNK_TYPE_CARD_UID_ARR,
     [CHUNK_ID_CARD_CLEAR] = CHUNK_TYPE_U16,
 };
 
@@ -244,7 +245,7 @@ static uint32_t cmd_write_data()
         req_data_size -= chunk_size;
 
         switch (ch->id) {
-        case CHUNK_ID_CARD_UID_ARR: {
+        case CHUNK_ID_CARD_UID_ARR_WRITE: {
             struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
             uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
             struct keys_res res = keys_save(c->data, count);
@@ -290,14 +291,14 @@ static uint32_t cmd_read_data()
         case CHUNK_ID_CARD_RANGE: {
             struct chunk_u16 *c = (struct chunk_u16 *)ch;
             struct keys_range keys = keys_get_cards(c->data & 0xFF, c->data >> 8);
-            add_resp_card_uid_arr(&next_resp_chunk, CHUNK_ID_CARD_UID_ARR, keys);
+            add_resp_card_uid_arr(&next_resp_chunk, CHUNK_ID_CARD_UID_ARR_READ, keys);
             uint32_t header_chunk_size = sizeof(struct header)
                                        + sizeof(struct chunk_card_uid_arr)
                                        + keys.size;
 
             if (keys.size == 0) {
                 resp_list = (struct buf_list){
-                    .count = 2,                    
+                    .count = 2,
                     .bufs = {
                              [0] = {.p = &pack_resp, .size = header_chunk_size},
                              [1] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
