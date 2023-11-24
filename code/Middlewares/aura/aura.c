@@ -54,9 +54,9 @@ enum chunk_data_type {
     CHUNK_TYPE_F32_ARR = 16,
     CHUNK_TYPE_f64_ARR = 17,
 
-    CHUNK_TYPE_CARD_UID = 18,
-    CHUNK_TYPE_CARD_UID_ARR = 19,
-    CHUNK_TYPE_CARD_RANGE = 20,
+    CHUNK_TYPE_CARD_UID = 19,
+    CHUNK_TYPE_CARD_UID_ARR = 20,
+    CHUNK_TYPE_CARD_RANGE = 21,
 };
 
 enum chunk_id {
@@ -182,7 +182,7 @@ static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 static void add_chunk_card_uid(void **chunk, enum chunk_id id, union rfid_card_uid val)
 {
     void *data = add_chunk_head(chunk, id, sizeof(val));
-    *(union rfid_card_uid *)__UNALIGNED_UINT32_READ(data) = val;
+    *(union rfid_card_uid *)(data) = val;
 }
 
 static void add_resp_card_uid_arr(void **chunk, enum chunk_id id, struct keys_range val)
@@ -281,10 +281,10 @@ static uint32_t cmd_read_data()
     void *next_resp_chunk = pack_resp.data;
     void *next_req_chunk = pack_req.data;
 
-    while (req_data_size) {
+    while (req_data_size > 0) {
         struct chunk_head *ch = (struct chunk_head *)next_req_chunk;
         uint32_t chunk_size = ch->data_size + sizeof(struct chunk_head);
-        next_req_chunk = (uint8_t *)next_req_chunk + chunk_size;
+        next_req_chunk = (void *)((uint32_t)next_req_chunk + chunk_size);
         req_data_size -= chunk_size;
 
         switch (ch->id) {
