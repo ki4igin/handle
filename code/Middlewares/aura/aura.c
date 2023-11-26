@@ -1,4 +1,5 @@
 #include "aura.h"
+#include "chunk.h"
 #include "assert.h"
 #include "crc16.h"
 #include "keys.h"
@@ -34,93 +35,6 @@ enum func {
 
 static_assert(sizeof(struct header) == 20, "Error in struct header");
 
-enum chunk_data_type {
-    CHUNK_TYPE_NONE = 0,
-    CHUNK_TYPE_I8 = 1,
-    CHUNK_TYPE_U8 = 2,
-    CHUNK_TYPE_I16 = 3,
-    CHUNK_TYPE_U16 = 4,
-    CHUNK_TYPE_I32 = 5,
-    CHUNK_TYPE_U32 = 6,
-    CHUNK_TYPE_F32 = 7,
-    CHUNK_TYPE_f64 = 8,
-    CHUNK_TYPE_STR = 9,
-    CHUNK_TYPE_I8_ARR = 10,
-    CHUNK_TYPE_U8_ARR = 11,
-    CHUNK_TYPE_I16_ARR = 12,
-    CHUNK_TYPE_U16_ARR = 13,
-    CHUNK_TYPE_I32_ARR = 14,
-    CHUNK_TYPE_U32_ARR = 15,
-    CHUNK_TYPE_F32_ARR = 16,
-    CHUNK_TYPE_f64_ARR = 17,
-
-    CHUNK_TYPE_CARD_UID = 19,
-    CHUNK_TYPE_CARD_UID_ARR = 20,
-    CHUNK_TYPE_CARD_RANGE = 21,
-};
-
-enum chunk_id {
-    CHUNK_ID_TYPE_SENSOR = 1,
-    CHUNK_ID_UIDS_ARRAY = 2,
-
-    CHUNK_ID_ERR,
-
-    CHUNK_ID_STATUS_LOCKER,
-
-    CHUNK_ID_CARD_UID,
-    CHUNK_ID_CARD_UID_ARR_WRITE,
-    CHUNK_ID_CARD_UID_ARR_READ,
-    CHUNK_ID_CARD_RANGE,
-
-    CHUNK_ID_CARD_SAVE_COUNT,
-    CHUNK_ID_CARD_CLEAR,
-};
-
-const enum chunk_data_type table_type[] = {
-    [CHUNK_ID_TYPE_SENSOR] = CHUNK_TYPE_U32,
-    [CHUNK_ID_STATUS_LOCKER] = CHUNK_TYPE_U16,
-    [CHUNK_ID_CARD_UID] = CHUNK_TYPE_CARD_UID,
-    [CHUNK_ID_ERR] = CHUNK_TYPE_U16,
-    [CHUNK_ID_CARD_SAVE_COUNT] = CHUNK_TYPE_U16,
-    [CHUNK_ID_CARD_RANGE] = CHUNK_TYPE_U16,
-    [CHUNK_ID_CARD_UID_ARR_READ] = CHUNK_TYPE_CARD_RANGE,
-    [CHUNK_ID_CARD_UID_ARR_WRITE] = CHUNK_TYPE_CARD_UID_ARR,
-    [CHUNK_ID_CARD_CLEAR] = CHUNK_TYPE_U16,
-};
-
-struct chunk_head {
-    uint8_t id;
-    uint8_t type;
-    uint16_t data_size;
-};
-
-struct chunk {
-    uint8_t id;
-    uint8_t type;
-    uint16_t data_size;
-    uint16_t data[];
-};
-
-struct chunk_u16 {
-    struct chunk_head head;
-    uint16_t data;
-};
-
-struct chunk_u32 {
-    struct chunk_head head;
-    uint32_t data;
-};
-
-struct chunk_card_uid {
-    struct chunk_head head;
-    union rfid_card_uid data;
-};
-
-struct chunk_card_uid_arr {
-    struct chunk_head head;
-    union rfid_card_uid data[];
-};
-
 uint32_t flags_pack_received = 0;
 uint32_t uid = 0;
 
@@ -129,9 +43,7 @@ static struct {
     uint8_t data[AURA_MAX_DATA_SIZE];
     crc16_t crc;
     void *next_chunk;
-} pack_req, pack_resp = {
-                .header.protocol = 0x41525541U,
-};
+} pack_req, pack_resp = {.header.protocol = 0x41525541U};
 
 enum state_recv {
     STATE_RECV_START,
@@ -151,51 +63,10 @@ static void aura_recv_package(void)
 
 static struct buf_list resp_list;
 
-static void *add_chunk_head(void **chunk, enum chunk_id id, uint16_t size)
-{
-    struct chunk *head = (struct chunk *)*chunk;
-    *chunk = (void *)((uint32_t)*chunk + size + sizeof(*head));
-    head->id = id;
-    head->type = table_type[id];
-    head->data_size = size;
-    return head->data;
-}
-
-static void add_chunk(void **chunk, enum chunk_id id, uint16_t size, void *data)
-{
-    void *chunk_data = add_chunk_head(chunk, id, size);
-    memcpy_u16(data, chunk_data, size);
-}
-
-static void add_chunk_u16(void **chunk, enum chunk_id id, uint16_t val)
-{
-    void *data = add_chunk_head(chunk, id, sizeof(val));
-    *(uint16_t *)data = val;
-}
-
-static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
-{
-    void *data = add_chunk_head(chunk, id, sizeof(val));
-    *(uint32_t *)data = val;
-}
-
-static void add_chunk_card_uid(void **chunk, enum chunk_id id, union rfid_card_uid val)
-{
-    void *data = add_chunk_head(chunk, id, sizeof(val));
-    *(union rfid_card_uid *)(data) = val;
-}
-
 static void add_resp_card_uid_arr(void **chunk, enum chunk_id id, struct keys_range val)
 {
-    add_chunk_head(chunk, id, val.size);
+    add_chunk_head(chunk, id, CHUNK_TYPE_CARD_UID_ARR, val.size);
 }
-
-// static void aura_create_resp_clear_cards(data_clear_cards_t data)
-// {
-//     pack.chunk.type = CHUNK_TYPE_U8;
-//     pack.chunk.size = sizeof(data_clear_cards_t);
-//     *(data_clear_cards_t *)pack.data = data;
-// }
 
 static void aura_send_response(uint32_t data_size)
 {
@@ -229,7 +100,8 @@ static uint32_t cmd_status(void)
     add_chunk_u16(&next_chunk, CHUNK_ID_STATUS_LOCKER, data);
     // add_chunk_card_uid(&next_chunk, CHUNK_ID_CARD_UID, rfid_card_uid);
     // add_chunk(&next_chunk, CHUNK_ID_STATUS_LOCKER, sizeof(data), &data);
-    add_chunk(&next_chunk, CHUNK_ID_CARD_UID, sizeof(rfid_card_uid), &rfid_card_uid);
+    add_chunk(&next_chunk, CHUNK_ID_CARD_UID, CHUNK_TYPE_CARD_UID,
+              sizeof(rfid_card_uid), &rfid_card_uid);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
 

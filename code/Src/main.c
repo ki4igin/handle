@@ -53,47 +53,47 @@ int main(void)
     locker_close();
 
     /* Initialize RFAL */
-    // rfalAnalogConfigInitialize();
-    // if (rfalInitialize() != ERR_NONE) {
-    //     /* Initialization failed - indicate on LEDs */
-    //     while (1) {
-    //         gpio_ledb_toggle();
-    //         gpio_ledr_toggle();
-    //         gpio_ledg_toggle();
+    rfalAnalogConfigInitialize();
+    if (rfalInitialize() != ERR_NONE) {
+        /* Initialization failed - indicate on LEDs */
+        while (1) {
+            gpio_ledb_toggle();
+            gpio_ledr_toggle();
+            gpio_ledg_toggle();
 
-    //         platformDelay(500);
-    //     }
-    // }
+            platformDelay(500);
+        }
+    }
 
-    // for (uint32_t i = 0; i < 10; i++) {
-    //     uint8_t tmp;
-    //     st25r3911ReadRegister(i, &tmp);
-    //     platformLog("reg %d: %s\n", i, hex2Str(&tmp, 1));
-    //     LL_mDelay(100);
-    // }
+    for (uint32_t i = 0; i < 10; i++) {
+        uint8_t tmp;
+        st25r3911ReadRegister(i, &tmp);
+        platformLog("reg %d: %s\n", i, hex2Str(&tmp, 1));
+        LL_mDelay(100);
+    }
 
-    // st25r3911ExecuteCommand(ST25R3911_CMD_CALIBRATE_C_SENSOR);
-    // LL_mDelay(100);
+    st25r3911ExecuteCommand(ST25R3911_CMD_CALIBRATE_C_SENSOR);
+    LL_mDelay(100);
 
-    // platformLogReg(0x2F);
-    // platformLogReg(0x2E);
+    platformLogReg(0x2F);
+    platformLogReg(0x2E);
 
     keys_init();
     aura_init();
 
     while (1) {
         /* Run RFAL Worker */
-        // rfalWorker();
+        rfalWorker();
 
-        // /* Run Demo Application */
-        // uint32_t card_found = rfid_cycle();
-        // if (card_found) {
-        //     platformLog("ISO14443A/NFC-A, UID: %s\n",
-        //                 hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
-        //     if (key_is_valid(&rfid_card_uid)) {
-        //         locker_open();
-        //     }
-        // }
+        /* Run Demo Application */
+        uint32_t card_found = rfid_cycle();
+        if (card_found) {
+            platformLog("ISO14443A/NFC-A, UID: %s\n",
+                        hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
+            if (key_is_valid(&rfid_card_uid)) {
+                locker_open();
+            }
+        }
 
         aura_cmd_process();
     }
