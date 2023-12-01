@@ -127,9 +127,9 @@ static uint32_t cmd_write_data()
         case CHUNK_ID_STATUS_LOCKER: {
             struct chunk_u16 *c = (struct chunk_u16 *)ch;
             if (c->data == 0x00FF) {
-                locker_close();
-            } else if (c->data == 0x0000) {
                 locker_open();
+            } else if (c->data == 0x0000) {
+                locker_close();
             }
             uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
             add_chunk_u16(&next_resp_chunk, CHUNK_ID_STATUS_LOCKER, data);
