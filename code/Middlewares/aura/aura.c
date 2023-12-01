@@ -165,27 +165,28 @@ static uint32_t cmd_read_data()
             struct keys_range keys = keys_get_cards(c->data & 0xFF, c->data >> 8);
             add_resp_card_uid_arr(&next_resp_chunk, CHUNK_ID_CARD_UID_ARR_READ, keys);
             uint32_t header_chunk_size = sizeof(struct header)
-                                       + sizeof(struct chunk_card_uid_arr)
-                                       + keys.size;
+                                       + sizeof(struct chunk_card_uid_arr);
 
+            // clang-format off
             if (keys.size == 0) {
                 resp_list = (struct buf_list){
                     .count = 2,
                     .bufs = {
-                             [0] = {.p = &pack_resp, .size = header_chunk_size},
-                             [1] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
-                             },
+                        [0] = {.p = &pack_resp, .size = header_chunk_size},
+                        [1] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
+                    },
                 };
             } else {
                 resp_list = (struct buf_list){
                     .count = 3,
                     .bufs = {
-                             [0] = {.p = &pack_resp, .size = header_chunk_size},
-                             [1] = {.p = keys.p, .size = keys.size},
-                             [2] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
-                             },
+                        [0] = {.p = &pack_resp, .size = header_chunk_size},
+                        [1] = {.p = keys.p, .size = keys.size},
+                        [2] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
+                    },
                 };
             }
+            // clang-format on
             return sizeof(struct chunk_card_uid_arr) + keys.size;
         } break;
         default:
