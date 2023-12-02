@@ -58,14 +58,14 @@ uint32_t rfid_cycle(void)
 
     case ST_POLL_ACTIVE_TECH:
         // demoPollAP2P();
-        platformDelay(40);
+        // platformDelay(40);
         NEXT_STATE();
         break;
 
     case ST_POLL_PASSIV_TECH:
         found = poll_NFCA();
-        // platformDelay(300);
         state = ST_FIELD_OFF;
+        platformDelay(300);
         break;
 
     case ST_WAIT_WAKEUP:

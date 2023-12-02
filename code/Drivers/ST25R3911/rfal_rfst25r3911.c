@@ -2962,7 +2962,7 @@ ReturnCode rfalWakeUpModeStart(const rfalWakeUpConfig *config)
         gRFAL.wum.cfg.indAmp.delta = 1U;
         gRFAL.wum.cfg.indAmp.reference = RFAL_WUM_REFERENCE_AUTO;
         gRFAL.wum.cfg.indAmp.autoAvg = true;
-        gRFAL.wum.cfg.indPha.delta = 2U;
+        gRFAL.wum.cfg.indPha.delta = 5U;
         gRFAL.wum.cfg.indPha.reference = RFAL_WUM_REFERENCE_AUTO;
         gRFAL.wum.cfg.indPha.autoAvg = true;
     } else {
