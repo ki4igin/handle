@@ -17,6 +17,11 @@ union rfid_card_uid {
 
 extern __ALIGNED(4) union rfid_card_uid rfid_card_uid;
 
+inline static void rfid_clear_card(union rfid_card_uid *uid)
+{
+    *uid = (union rfid_card_uid){0};
+}
+
 uint32_t rfid_cycle(void);
 
 #endif

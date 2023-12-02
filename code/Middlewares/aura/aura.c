@@ -102,6 +102,7 @@ static uint32_t cmd_status(void)
     // add_chunk(&next_chunk, CHUNK_ID_STATUS_LOCKER, sizeof(data), &data);
     add_chunk(&next_chunk, CHUNK_ID_CARD_UID, CHUNK_TYPE_CARD_UID,
               sizeof(rfid_card_uid), &rfid_card_uid);
+    rfid_clear_card(&rfid_card_uid);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
 
