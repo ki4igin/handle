@@ -14,6 +14,7 @@
 #include "aura.h"
 #include "keys.h"
 #include "locker.h"
+#include "access.h"
 
 void SystemClock_Config(void);
 
@@ -90,9 +91,16 @@ int main(void)
         if (card_found) {
             platformLog("ISO14443A/NFC-A, UID: %s\n",
                         hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
-            if (key_is_valid(&rfid_card_uid)) {
+            uint32_t is_valid = key_is_valid(&rfid_card_uid);
+            if (is_valid) {
                 locker_open();
             }
+            struct access acc = {
+                .uid = rfid_card_uid,
+                .time_ms = LL_TIM_GetCounter(TIM2),
+                .is_valid = is_valid,
+            };
+            access_add(&acc);
         }
 
         aura_cmd_process();

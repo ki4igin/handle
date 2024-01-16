@@ -9,6 +9,7 @@
 #include "usart_ex.h"
 #include "tools.h"
 #include "buf.h"
+#include "access.h"
 
 #define RESPONSE_DELAY_ON  1
 
@@ -100,11 +101,10 @@ static uint32_t cmd_status(void)
     void *next_chunk = pack_resp.data;
     uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
     add_chunk_u16(&next_chunk, CHUNK_ID_STATUS_LOCKER, data);
-    // add_chunk_card_uid(&next_chunk, CHUNK_ID_CARD_UID, rfid_card_uid);
-    // add_chunk(&next_chunk, CHUNK_ID_STATUS_LOCKER, sizeof(data), &data);
-    add_chunk(&next_chunk, CHUNK_ID_CARD_UID, CHUNK_TYPE_CARD_UID,
-              sizeof(rfid_card_uid), &rfid_card_uid);
-    rfid_clear_card(&rfid_card_uid);
+    struct access *acc = access_get_last();
+    add_chunk_card_uid(&next_chunk, &acc->uid);
+    add_chunk_u32(&next_chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
+    add_chunk_u16(&next_chunk, CHUNK_ID_ACCESS_IS_VALID, acc->is_valid);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
 
@@ -191,6 +191,22 @@ static uint32_t cmd_read_data()
             }
             // clang-format on
             return sizeof(struct chunk_card_uid_arr) + keys.size;
+        } break;
+        case CHUNK_ID_ACCESS_COUNT: {
+            struct chunk_u16 *c = (struct chunk_u16 *)ch;
+            // нужна обработка количества
+
+            uint32_t acc_count = access_get_count();
+            for (uint32_t i = 0; i < acc_count; i++) {
+                struct access *acc = access_get(i);
+                add_chunk_card_uid(&next_resp_chunk, &acc->uid);
+                add_chunk_u32(&next_resp_chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
+                add_chunk_u16(&next_resp_chunk, CHUNK_ID_ACCESS_IS_VALID, acc->is_valid);
+            }
+            return (sizeof(struct chunk_card_uid)
+                    + sizeof(struct chunk_u32)
+                    + sizeof(struct chunk_u16))
+                 * acc_count;
         } break;
         default:
             return 0;
