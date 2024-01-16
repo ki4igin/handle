@@ -10,6 +10,8 @@
 #include "tools.h"
 #include "buf.h"
 
+#define RESPONSE_DELAY_ON  1
+
 #define AURA_HANDLE_ID     7
 #define AURA_MAX_DATA_SIZE 128
 
@@ -226,6 +228,9 @@ void aura_cmd_process(void)
         return;
     }
     }
+#if RESPONSE_DELAY_ON
+    LL_mDelay(2);
+#endif
 
     aura_send_response(resp_data_size);
 }

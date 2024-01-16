@@ -57,7 +57,7 @@
 * GLOBAL DEFINES
 ******************************************************************************
 */
-#define LOG_ON
+// #define LOG_ON
 
 #define ST25R391X_SS_PIN          SPI_NSS_Pin  /*!< GPIO pin used for ST25R3911 SPI SS                */
 #define ST25R391X_SS_PORT         SPI_NSS_Port /*!< GPIO port used for ST25R3911 SPI SS port          */
