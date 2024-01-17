@@ -48,6 +48,7 @@ int main(void)
 
     platformLog("Welcome to aura\n");
     LL_mDelay(100);
+    LL_TIM_EnableCounter(TIM2);
 
     // st25r3911SetRegisterBits(0x00, 0b101);
     // st25r3911SetRegisterBits(0x02, 0b10000000);
@@ -92,14 +93,14 @@ int main(void)
             platformLog("ISO14443A/NFC-A, UID: %s\n",
                         hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
             uint32_t is_valid = key_is_valid(&rfid_card_uid);
-            if (is_valid) {
-                locker_open();
-            }
             struct access acc = {
                 .uid = rfid_card_uid,
-                .time_ms = LL_TIM_GetCounter(TIM2),
-                .is_valid = is_valid,
+                .time_ms = LL_TIM_GetCounter(TIM2),                
             };
+            if (is_valid) {
+                locker_open();
+                acc.uid.raw[0] |= 0x80;
+            }            
             access_add(&acc);
         }
 
