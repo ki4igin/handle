@@ -3,6 +3,7 @@
 
 #include "stdint.h"
 #include "rfid.h"
+#include "access.h"
 #include "tools.h"
 
 enum chunk_id {
@@ -122,6 +123,16 @@ inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 inline static void add_chunk_card_uid(void **chunk, union rfid_card_uid *val)
 {
     add_chunk(chunk, CHUNK_ID_CARD_UID, CHUNK_TYPE_CARD_UID, sizeof(*val), val);
+}
+
+inline static void add_chunk_acc(void **chunk, struct access *acc)
+{
+    union rfid_card_uid uid = acc->uid;
+    uint32_t is_valid = (uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
+    uid.raw[0] &= ~0x80;
+    add_chunk_card_uid(chunk, &uid);
+    add_chunk_u32(chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
+    add_chunk_u16(chunk, CHUNK_ID_ACCESS_IS_VALID, is_valid);
 }
 
 #endif

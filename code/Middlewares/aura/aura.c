@@ -96,27 +96,12 @@ static uint32_t cmd_whoami(void)
     return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
 }
 
-static void add_chunk_acc(void **chunk, struct access *acc)
-{
-    union rfid_card_uid uid = acc->uid;
-    uint32_t is_valid = (uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
-    uid.raw[0] &= ~0x80;
-    add_chunk_card_uid(chunk, &uid);
-    add_chunk_u32(chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
-    add_chunk_u16(chunk, CHUNK_ID_ACCESS_IS_VALID, is_valid);
-}
-
 static uint32_t cmd_status(void)
 {
     void *next_chunk = pack_resp.data;
     uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
     add_chunk_u16(&next_chunk, CHUNK_ID_STATUS_LOCKER, data);
     struct access *acc = access_get_last();
-    // union rfid_card_uid uid = acc->uid;
-    // uint32_t is_valid = (uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
-    // add_chunk_card_uid(&next_chunk, &uid);
-    // add_chunk_u32(&next_chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
-    // add_chunk_u16(&next_chunk, CHUNK_ID_ACCESS_IS_VALID, is_valid);
     add_chunk_acc(&next_chunk, acc);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
@@ -210,24 +195,15 @@ static uint32_t cmd_read_data()
             uint32_t acc_count = c->data;
             for (uint32_t i = 0; i < acc_count; i++) {
                 struct access *acc = access_get_from_end(i);
-                union rfid_card_uid uid = acc->uid;
-                uint32_t is_valid = (uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
-                uid.raw[0] &= ~0x80;
-                add_chunk_card_uid(&next_resp_chunk, &uid);
-                add_chunk_u32(&next_resp_chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
-                add_chunk_u16(&next_resp_chunk, CHUNK_ID_ACCESS_IS_VALID, is_valid);
+                add_chunk_acc(&next_req_chunk, acc);
             }
-            return (sizeof(struct chunk_card_uid)
-                    + sizeof(struct chunk_u32)
-                    + sizeof(struct chunk_u16))
-                 * acc_count;
         } break;
         default:
             return 0;
         }
     }
 
-    return 0;
+    return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
 }
 
 void aura_cmd_process(void)
