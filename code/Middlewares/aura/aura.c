@@ -101,7 +101,7 @@ static uint32_t cmd_status(void)
     void *next_chunk = pack_resp.data;
     uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
     add_chunk_u16(&next_chunk, CHUNK_ID_STATUS_LOCKER, data);
-    struct access *acc = access_get_last();
+    struct access *acc = access_circ_get_last(&access_circ);
     add_chunk_acc(&next_chunk, acc);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
@@ -194,7 +194,7 @@ static uint32_t cmd_read_data()
             struct chunk_u16 *c = (struct chunk_u16 *)ch;
             uint32_t acc_count = c->data;
             for (uint32_t i = 0; i < acc_count; i++) {
-                struct access *acc = access_get_from_end(i);
+                struct access *acc = access_circ_get_from_end(&access_circ, i);
                 add_chunk_acc(&next_req_chunk, acc);
             }
         } break;

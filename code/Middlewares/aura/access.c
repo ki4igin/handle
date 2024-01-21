@@ -1,3 +1,5 @@
 #include "access.h"
 
-struct access_buf access_buf = {0};
+#define ACCESS_COUNT_MAX 128
+
+circ_declare(access, struct access, ACCESS_COUNT_MAX);

@@ -15,6 +15,7 @@
 #include "keys.h"
 #include "locker.h"
 #include "access.h"
+#include "fifo.h"
 
 void SystemClock_Config(void);
 
@@ -27,7 +28,6 @@ uint32_t globalCommProtectCnt = 0;
 int main(void)
 {
     /* MCU Configuration--------------------------------------------------------*/
-
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
@@ -101,7 +101,7 @@ int main(void)
                 locker_open();
                 acc.uid.raw[0] |= 0x80;
             }            
-            access_add(&acc);
+            access_circ_add(&access_circ, &acc);
         }
 
         aura_cmd_process();
