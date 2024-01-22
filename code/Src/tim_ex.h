@@ -19,4 +19,14 @@ static void tim14_one_pulse_en(uint32_t time_ms)
     LL_TIM_EnableCounter(TIM14);
 }
 
+inline static uint32_t tim1s_get(void)
+{
+    return LL_TIM_GetCounter(TIM2) / 1024;
+}
+
+inline static void tim1s_set(uint32_t time_s)
+{
+    LL_TIM_SetCounter(TIM2, time_s * 1024);
+}
+
 #endif

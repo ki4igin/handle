@@ -18,6 +18,8 @@ void MX_TIM2_Init(void)
     LL_TIM_SetClockSource(TIM2, LL_TIM_CLOCKSOURCE_INTERNAL);
     LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
     LL_TIM_DisableMasterSlaveMode(TIM2);
+
+    LL_TIM_EnableCounter(TIM2);
 }
 
 /* TIM14 init function */
