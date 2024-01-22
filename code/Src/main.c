@@ -95,12 +95,12 @@ int main(void)
             uint32_t is_valid = key_is_valid(&rfid_card_uid);
             struct access acc = {
                 .uid = rfid_card_uid,
-                .time_ms = LL_TIM_GetCounter(TIM2),                
+                .time_ms = LL_TIM_GetCounter(TIM2) / 1024,
             };
             if (is_valid) {
                 locker_open();
                 acc.uid.raw[0] |= 0x80;
-            }            
+            }
             access_circ_add(&access_circ, &acc);
         }
 

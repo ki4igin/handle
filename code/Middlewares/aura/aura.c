@@ -143,6 +143,12 @@ static uint32_t cmd_write_data()
             uint16_t data = keys_get_count();
             add_chunk_u16(&next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, data);
         } break;
+        case CHUNK_ID_ACCESS_TIME: {
+            struct chunk_u32 *c = (struct chunk_u32 *)ch;
+            uint32_t new_time = c->data * 1024;
+            LL_TIM_SetCounter(TIM2, new_time);
+            add_chunk_u32(&next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
+        } break;
         }
     }
     return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;

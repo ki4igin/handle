@@ -1,6 +1,7 @@
 #include "tim.h"
 
 /* TIM2 init function */
+// f_tim = 1024 Hz
 void MX_TIM2_Init(void)
 {
     LL_TIM_InitTypeDef TIM_InitStruct = {0};
@@ -8,7 +9,7 @@ void MX_TIM2_Init(void)
     /* Peripheral clock enable */
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
 
-    TIM_InitStruct.Prescaler = 43392 - 1;
+    TIM_InitStruct.Prescaler = 42375 - 1;
     TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
     TIM_InitStruct.Autoreload = 4294967295;
     TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
