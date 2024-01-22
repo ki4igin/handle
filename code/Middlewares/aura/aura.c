@@ -9,11 +9,12 @@
 #include "usart_ex.h"
 #include "tools.h"
 #include "buf.h"
+#include "access.h"
 
 #define RESPONSE_DELAY_ON  1
 
 #define AURA_HANDLE_ID     7
-#define AURA_MAX_DATA_SIZE 128
+#define AURA_MAX_DATA_SIZE 256
 
 struct header {
     uint32_t protocol;
@@ -100,11 +101,8 @@ static uint32_t cmd_status(void)
     void *next_chunk = pack_resp.data;
     uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
     add_chunk_u16(&next_chunk, CHUNK_ID_STATUS_LOCKER, data);
-    // add_chunk_card_uid(&next_chunk, CHUNK_ID_CARD_UID, rfid_card_uid);
-    // add_chunk(&next_chunk, CHUNK_ID_STATUS_LOCKER, sizeof(data), &data);
-    add_chunk(&next_chunk, CHUNK_ID_CARD_UID, CHUNK_TYPE_CARD_UID,
-              sizeof(rfid_card_uid), &rfid_card_uid);
-    rfid_clear_card(&rfid_card_uid);
+    struct access *acc = access_circ_get_last(&access_circ);
+    add_chunk_acc(&next_chunk, acc);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
 
@@ -144,6 +142,12 @@ static uint32_t cmd_write_data()
             }
             uint16_t data = keys_get_count();
             add_chunk_u16(&next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, data);
+        } break;
+        case CHUNK_ID_ACCESS_TIME: {
+            struct chunk_u32 *c = (struct chunk_u32 *)ch;
+            uint32_t new_time = c->data * 1024;
+            LL_TIM_SetCounter(TIM2, new_time);
+            add_chunk_u32(&next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
         } break;
         }
     }
@@ -192,12 +196,23 @@ static uint32_t cmd_read_data()
             // clang-format on
             return sizeof(struct chunk_card_uid_arr) + keys.size;
         } break;
+        case CHUNK_ID_ACCESS_COUNT: {
+            struct chunk_u16 *c = (struct chunk_u16 *)ch;
+            uint32_t offset = c->data & 0xFF;
+            uint32_t count = (c->data >> 8);
+            count = (count < 8) ? count : 8;
+            for (uint32_t i = 0; i < count; i++) {
+                struct access *acc = access_circ_get_from_end(
+                    &access_circ, i + offset);
+                add_chunk_acc(&next_resp_chunk, acc);
+            }
+        } break;
         default:
             return 0;
         }
     }
 
-    return 0;
+    return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
 }
 
 void aura_cmd_process(void)

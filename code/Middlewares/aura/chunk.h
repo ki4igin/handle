@@ -3,6 +3,7 @@
 
 #include "stdint.h"
 #include "rfid.h"
+#include "access.h"
 #include "tools.h"
 
 enum chunk_id {
@@ -20,6 +21,10 @@ enum chunk_id {
 
     CHUNK_ID_CARD_SAVE_COUNT,
     CHUNK_ID_CARD_CLEAR,
+
+    CHUNK_ID_ACCESS_COUNT,
+    CHUNK_ID_ACCESS_IS_VALID,
+    CHUNK_ID_ACCESS_TIME,
 };
 
 enum chunk_data_type {
@@ -111,16 +116,22 @@ inline static void add_chunk_u16(void **chunk, enum chunk_id id, uint16_t val)
 
 inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 {
-    void *data = add_chunk_head(chunk, id, CHUNK_TYPE_U32, sizeof(val));
-    *(uint32_t *)data = val;
+    add_chunk(chunk, id, CHUNK_TYPE_U32, sizeof(val), &val);
 }
 
-inline static void add_chunk_card_uid(void **chunk,
-                                      enum chunk_id id,
-                                      union rfid_card_uid val)
+inline static void add_chunk_card_uid(void **chunk, union rfid_card_uid *val)
 {
-    void *data = add_chunk_head(chunk, id, CHUNK_TYPE_CARD_UID, sizeof(val));
-    *(union rfid_card_uid *)(data) = val;
+    add_chunk(chunk, CHUNK_ID_CARD_UID, CHUNK_TYPE_CARD_UID, sizeof(*val), val);
+}
+
+inline static void add_chunk_acc(void **chunk, struct access *acc)
+{
+    union rfid_card_uid uid = acc->uid;
+    uint32_t is_valid = (uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
+    uid.raw[0] &= ~0x80;
+    add_chunk_card_uid(chunk, &uid);
+    add_chunk_u32(chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
+    add_chunk_u16(chunk, CHUNK_ID_ACCESS_IS_VALID, is_valid);
 }
 
 #endif
