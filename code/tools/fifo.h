@@ -33,17 +33,17 @@ inline static size_t fifo_is_full(struct fifo *f)
     return ((f->head + 1) & (f->mask)) == f->tail;
 }
 
-#define fifo_inc(_f, _type, _ht)                           \
-    do {                                                   \
-        const size_t len = sizeof(_type) / sizeof(size_t); \
-        _f->_ht = (_f->_ht + len) & _f->mask;              \
+#define fifo_inc(_f, _type, _ht)            \
+    do {                                    \
+        _f->_ht = (_f->_ht + 1) & _f->mask; \
     } while (0)
 
 #define fifo_func_define(_prefix, _type)                               \
     inline static void                                                 \
         _prefix##fifo_push_unchecked(struct fifo *f, _type *data)      \
     {                                                                  \
-        memcpy128(sizeof(_type), data, &f->data[f->head]);             \
+        const size_t len = sizeof(_type) / sizeof(size_t);             \
+        memcpy128(sizeof(_type), data, &f->data[f->head * len]);       \
         fifo_inc(f, _type, head);                                      \
     }                                                                  \
                                                                        \
@@ -57,7 +57,8 @@ inline static size_t fifo_is_full(struct fifo *f)
                                                                        \
     inline static _type *_prefix##fifo_pop(struct fifo *f)             \
     {                                                                  \
-        _type *p = (_type *)&f->data[f->tail];                         \
+        const size_t len = sizeof(_type) / sizeof(size_t);             \
+        _type *p = (_type *)&f->data[f->tail * len];                   \
         fifo_inc(f, _type, tail);                                      \
         return p;                                                      \
     }

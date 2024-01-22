@@ -8,7 +8,7 @@
 
 struct circ {
     const size_t mask;
-    size_t cur_idx;
+    size_t head;
     const size_t *data;
 };
 
@@ -18,16 +18,16 @@ struct circ {
     struct circ                                                                \
         _name##_circ = {.mask = (_count)-1, .data = _name##_circ_storage}
 
-#define circ_inc(_c, _type)                                \
-    do {                                                   \
-        const size_t len = sizeof(_type) / sizeof(size_t); \
-        _c->cur_idx = (_c->cur_idx + len) & _c->mask;      \
+#define circ_inc(_c, _type)                   \
+    do {                                      \
+        _c->head = (_c->head + 1) & _c->mask; \
     } while (0)
 
 #define circ_func_define(_prefix, _type)                               \
     inline static void _prefix##_circ_add(struct circ *c, _type *data) \
     {                                                                  \
-        memcpy128(sizeof(_type), data, &c->data[c->cur_idx]);          \
+        const size_t len = sizeof(_type) / sizeof(size_t);             \
+        memcpy128(sizeof(_type), data, &c->data[c->head * len]);       \
         circ_inc(c, _type);                                            \
     }                                                                  \
                                                                        \
@@ -35,8 +35,8 @@ struct circ {
         _prefix##_circ_get_from_end(struct circ *c, size_t idx)        \
     {                                                                  \
         const size_t len = sizeof(_type) / sizeof(size_t);             \
-        size_t idx_abs = (c->cur_idx - idx * len) & (c->mask);         \
-        return (_type *)&c->data[idx_abs];                             \
+        size_t idx_abs = (c->head - idx - 1) & (c->mask);              \
+        return (_type *)&c->data[idx_abs * len];                       \
     }                                                                  \
                                                                        \
     inline static _type *_prefix##_circ_get_last(struct circ *c)       \
