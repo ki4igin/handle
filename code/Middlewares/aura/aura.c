@@ -195,7 +195,7 @@ static uint32_t cmd_read_data()
             uint32_t acc_count = c->data;
             for (uint32_t i = 0; i < acc_count; i++) {
                 struct access *acc = access_circ_get_from_end(&access_circ, i);
-                add_chunk_acc(&next_req_chunk, acc);
+                add_chunk_acc(&next_resp_chunk, acc);
             }
         } break;
         default:

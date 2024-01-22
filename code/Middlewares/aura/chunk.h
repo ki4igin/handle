@@ -116,8 +116,7 @@ inline static void add_chunk_u16(void **chunk, enum chunk_id id, uint16_t val)
 
 inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 {
-    void *data = add_chunk_head(chunk, id, CHUNK_TYPE_U32, sizeof(val));
-    *(uint32_t *)data = val;
+    add_chunk(chunk, id, CHUNK_TYPE_U32, sizeof(val), &val);
 }
 
 inline static void add_chunk_card_uid(void **chunk, union rfid_card_uid *val)
