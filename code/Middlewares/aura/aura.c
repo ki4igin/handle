@@ -192,9 +192,12 @@ static uint32_t cmd_read_data()
         } break;
         case CHUNK_ID_ACCESS_COUNT: {
             struct chunk_u16 *c = (struct chunk_u16 *)ch;
-            uint32_t acc_count = c->data;
-            for (uint32_t i = 0; i < acc_count; i++) {
-                struct access *acc = access_circ_get_from_end(&access_circ, i);
+            uint32_t offset = c->data & 0xFF;
+            uint32_t count = (c->data >> 8);
+            count = (count < 8) ? count : 8;            
+            for (uint32_t i = 0; i < count; i++) {
+                struct access *acc = access_circ_get_from_end(
+                    &access_circ, i + offset);
                 add_chunk_acc(&next_resp_chunk, acc);
             }
         } break;
