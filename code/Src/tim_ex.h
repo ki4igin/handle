@@ -19,6 +19,11 @@ static void tim14_one_pulse_en(uint32_t time_ms)
     LL_TIM_EnableCounter(TIM14);
 }
 
+static uint32_t tim14_get_last_time(void)
+{
+    return LL_TIM_GetAutoReload(TIM14);
+}
+
 inline static uint32_t tim1s_get(void)
 {
     return LL_TIM_GetCounter(TIM2) / 1024;

@@ -98,6 +98,8 @@ int main(void)
             if (is_valid) {
                 locker_open();
                 acc.uid.raw[0] |= 0x80;
+            } else {
+                locker_view_ban();
             }
             access_circ_add(&access_circ, &acc);
         }

@@ -97,11 +97,11 @@ void st25r3911InitInterrupts( void )
     platformLedsInitialize();
 
 #ifdef PLATFORM_LED_RX_PIN
-    platformLedOff( PLATFORM_LED_RX_PORT, PLATFORM_LED_RX_PIN );
+    // platformLedOff( PLATFORM_LED_RX_PORT, PLATFORM_LED_RX_PIN );
 #endif /* PLATFORM_LED_RX_PIN */
 
 #ifdef PLATFORM_LED_FIELD_PIN
-    platformLedOff( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
+    // platformLedOff( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
 #endif /* PLATFORM_LED_FIELD_PIN */
 }
 
@@ -130,18 +130,18 @@ void st25r3911CheckForReceivedInterrupts( void )
 #ifdef PLATFORM_LED_FIELD_PIN         
         if ((iregs[0] & ST25R3911_IRQ_MASK_TXE) != 0U)
         {
-            platformLedOn( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
+            // platformLedOn( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
         }
 #endif /* PLATFORM_LED_FIELD_PIN */
        
 #ifdef PLATFORM_LED_RX_PIN
         if ((iregs[0] & ST25R3911_IRQ_MASK_RXS) != 0)
         {
-            platformLedOn( PLATFORM_LED_RX_PORT, PLATFORM_LED_RX_PIN );
+            // platformLedOn( PLATFORM_LED_RX_PORT, PLATFORM_LED_RX_PIN );
         }
         if (((iregs[0] & ST25R3911_IRQ_MASK_RXE) != 0) || ((iregs[1] & (ST25R3911_IRQ_MASK_NRE >> 8)) != 0)) /* In rare cases there is rxs but not rxe, then we have nre */
         {
-            platformLedOff( PLATFORM_LED_RX_PORT, PLATFORM_LED_RX_PIN );
+            // platformLedOff( PLATFORM_LED_RX_PORT, PLATFORM_LED_RX_PIN );
         }
 #endif /* PLATFORM_LED_RX_PIN */
        
