@@ -67,11 +67,6 @@ static void aura_recv_package(void)
 
 static struct buf_list resp_list;
 
-static void add_resp_card_uid_arr(void **chunk, enum chunk_id id, struct keys_range val)
-{
-    add_chunk_head(chunk, id, CHUNK_TYPE_CARD_UID_ARR, val.size);
-}
-
 static void aura_send_response(uint32_t data_size)
 {
     static uint32_t cnt = 0;
@@ -80,6 +75,10 @@ static void aura_send_response(uint32_t data_size)
     pack_resp.header.data_size = data_size;
 
     if (resp_list.count) {
+        // Это тупой костыль, но по другому я не придумал прокинуть размер
+        // ключей при чтении из flash
+        pack_resp.header.data_size = sizeof(struct chunk_card_uid_arr)
+                                   + resp_list.bufs[1].size;
         crc16_add2list(&resp_list);
         struct buf *b = buf_list_get_next(&resp_list);
         uart_send_dma(b->p, b->size);
@@ -107,6 +106,45 @@ static uint32_t cmd_status(void)
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
 
+static void parse_write_chunk(const struct chunk_head *ch,
+                              void **next_resp_chunk)
+{
+    switch (ch->id) {
+    case CHUNK_ID_CARD_UID_ARR_WRITE: {
+        struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
+        uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
+        struct keys_res res = keys_save(c->data, count);
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, res.err);
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, res.val);
+    } break;
+    case CHUNK_ID_STATUS_LOCKER: {
+        struct chunk_u16 *c = (struct chunk_u16 *)ch;
+        if (c->data == 0x00FF) {
+            locker_open();
+        } else if (c->data == 0x0000) {
+            locker_close();
+        }
+        uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_STATUS_LOCKER, data);
+    } break;
+    case CHUNK_ID_CARD_CLEAR: {
+        struct chunk_u16 *c = (struct chunk_u16 *)ch;
+        if (c->data == 0x00FF) {
+            keys_clear();
+        }
+        uint16_t data = keys_get_count();
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, data);
+    } break;
+    case CHUNK_ID_ACCESS_TIME: {
+        struct chunk_u32 *c = (struct chunk_u32 *)ch;
+        uint32_t new_time = c->data;
+        tim1s_set(new_time);
+        add_chunk_u32(next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
+    } break;
+    default:
+    }
+}
+
 static uint32_t cmd_write_data()
 {
     int32_t req_data_size = pack_req.header.data_size;
@@ -117,42 +155,51 @@ static uint32_t cmd_write_data()
         uint32_t chunk_size = ch->data_size + sizeof(struct chunk_head);
         next_req_chunk = (void *)((uint32_t)next_req_chunk + chunk_size);
         req_data_size -= chunk_size;
-
-        switch (ch->id) {
-        case CHUNK_ID_CARD_UID_ARR_WRITE: {
-            struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
-            uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
-            struct keys_res res = keys_save(c->data, count);
-            add_chunk_u16(&next_resp_chunk, CHUNK_ID_ERR, res.err);
-            add_chunk_u16(&next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, res.val);
-        } break;
-        case CHUNK_ID_STATUS_LOCKER: {
-            struct chunk_u16 *c = (struct chunk_u16 *)ch;
-            if (c->data == 0x00FF) {
-                locker_open();
-            } else if (c->data == 0x0000) {
-                locker_close();
-            }
-            uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
-            add_chunk_u16(&next_resp_chunk, CHUNK_ID_STATUS_LOCKER, data);
-        } break;
-        case CHUNK_ID_CARD_CLEAR: {
-            struct chunk_u16 *c = (struct chunk_u16 *)ch;
-            if (c->data == 0x00FF) {
-                keys_clear();
-            }
-            uint16_t data = keys_get_count();
-            add_chunk_u16(&next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, data);
-        } break;
-        case CHUNK_ID_ACCESS_TIME: {
-            struct chunk_u32 *c = (struct chunk_u32 *)ch;
-            uint32_t new_time = c->data;
-            tim1s_set(new_time);
-            add_chunk_u32(&next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
-        } break;
-        }
+        parse_write_chunk(ch, &next_resp_chunk);
     }
     return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
+}
+
+static void parse_read_chunk(const struct chunk_head *ch,
+                             void **next_resp_chunk)
+{
+    switch (ch->id) {
+    case CHUNK_ID_CARD_RANGE: {
+        struct chunk_u16 *c = (struct chunk_u16 *)ch;
+        struct keys_range keys = keys_get_cards(c->data & 0xFF, c->data >> 8);
+        add_chunk_head(next_resp_chunk,
+                       CHUNK_ID_CARD_UID_ARR_READ,
+                       CHUNK_TYPE_CARD_UID_ARR,
+                       keys.size);
+        uint32_t header_chunk_size = sizeof(struct header)
+                                   + sizeof(struct chunk_card_uid_arr);
+
+        // clang-format off
+        if (keys.size) {
+            resp_list = (struct buf_list){
+                .count = 3,
+                .bufs = {
+                    [0] = {.p = &pack_resp, .size = header_chunk_size},
+                    [1] = {.p = keys.p, .size = keys.size},
+                    [2] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
+                },
+            };
+        }
+        // clang-format on
+    } break;
+    case CHUNK_ID_ACCESS_COUNT: {
+        struct chunk_u16 *c = (struct chunk_u16 *)ch;
+        uint32_t offset = c->data & 0xFF;
+        uint32_t count = (c->data >> 8);
+        count = (count < 8) ? count : 8;
+        for (uint32_t i = 0; i < count; i++) {
+            uint32_t idx = i + offset;
+            struct access *acc = access_circ_get_from_end(&access_circ, idx);
+            add_chunk_acc(next_resp_chunk, acc);
+        }
+    } break;
+    default:
+    }
 }
 
 static uint32_t cmd_read_data()
@@ -162,55 +209,11 @@ static uint32_t cmd_read_data()
     void *next_req_chunk = pack_req.data;
 
     while (req_data_size > 0) {
-        struct chunk_head *ch = (struct chunk_head *)next_req_chunk;
+        const struct chunk_head *ch = (struct chunk_head *)next_req_chunk;
         uint32_t chunk_size = ch->data_size + sizeof(struct chunk_head);
         next_req_chunk = (void *)((uint32_t)next_req_chunk + chunk_size);
         req_data_size -= chunk_size;
-
-        switch (ch->id) {
-        case CHUNK_ID_CARD_RANGE: {
-            struct chunk_u16 *c = (struct chunk_u16 *)ch;
-            struct keys_range keys = keys_get_cards(c->data & 0xFF, c->data >> 8);
-            add_resp_card_uid_arr(&next_resp_chunk, CHUNK_ID_CARD_UID_ARR_READ, keys);
-            uint32_t header_chunk_size = sizeof(struct header)
-                                       + sizeof(struct chunk_card_uid_arr);
-
-            // clang-format off
-            if (keys.size == 0) {
-                resp_list = (struct buf_list){
-                    .count = 2,
-                    .bufs = {
-                        [0] = {.p = &pack_resp, .size = header_chunk_size},
-                        [1] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
-                    },
-                };
-            } else {
-                resp_list = (struct buf_list){
-                    .count = 3,
-                    .bufs = {
-                        [0] = {.p = &pack_resp, .size = header_chunk_size},
-                        [1] = {.p = keys.p, .size = keys.size},
-                        [2] = {.p = &pack_resp.crc, .size = sizeof(crc16_t)},
-                    },
-                };
-            }
-            // clang-format on
-            return sizeof(struct chunk_card_uid_arr) + keys.size;
-        } break;
-        case CHUNK_ID_ACCESS_COUNT: {
-            struct chunk_u16 *c = (struct chunk_u16 *)ch;
-            uint32_t offset = c->data & 0xFF;
-            uint32_t count = (c->data >> 8);
-            count = (count < 8) ? count : 8;
-            for (uint32_t i = 0; i < count; i++) {
-                struct access *acc = access_circ_get_from_end(
-                    &access_circ, i + offset);
-                add_chunk_acc(&next_resp_chunk, acc);
-            }
-        } break;
-        default:
-            return 0;
-        }
+        parse_read_chunk(ch, &next_resp_chunk);
     }
 
     return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
