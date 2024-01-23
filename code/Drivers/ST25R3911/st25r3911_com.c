@@ -81,11 +81,11 @@ static inline void st25r3911CheckFieldSetLED(uint8_t value)
     if ((ST25R3911_REG_OP_CONTROL_tx_en & value) != 0U)
     {
 #ifdef PLATFORM_LED_FIELD_PIN
-        platformLedOn( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
+        // platformLedOn( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
     }
     else
     {
-        platformLedOff( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
+        // platformLedOff( PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN );
 #endif /* PLATFORM_LED_FIELD_PIN */
     }
 }
@@ -409,7 +409,7 @@ void st25r3911ExecuteCommand( uint8_t cmd )
 #ifdef PLATFORM_LED_FIELD_PIN
     if ( (cmd >= ST25R3911_CMD_TRANSMIT_WITH_CRC) && (cmd <= ST25R3911_CMD_RESPONSE_RF_COLLISION_0))
     {
-        platformLedOff(PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN);
+        // platformLedOff(PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN);
     }
 #endif /* PLATFORM_LED_FIELD_PIN */
     
