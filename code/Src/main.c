@@ -2,10 +2,9 @@
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
+#include "tim_ex.h"
 #include "usart.h"
 #include "gpio.h"
-#include "tim.h"
-#include "stm32f0xx_ll_tim.h"
 #include "rfid.h"
 #include "rfal_rf.h"
 #include "rfal_analogConfig.h"
@@ -15,7 +14,6 @@
 #include "keys.h"
 #include "locker.h"
 #include "access.h"
-#include "fifo.h"
 
 void SystemClock_Config(void);
 
@@ -48,7 +46,6 @@ int main(void)
 
     platformLog("Welcome to aura\n");
     LL_mDelay(100);
-    LL_TIM_EnableCounter(TIM2);
 
     // st25r3911SetRegisterBits(0x00, 0b101);
     // st25r3911SetRegisterBits(0x02, 0b10000000);
@@ -84,22 +81,25 @@ int main(void)
     aura_init();
 
     while (1) {
-        /* Run RFAL Worker */
-        rfalWorker();
+        static uint32_t time_card_found = 0;
 
-        /* Run Demo Application */
+        rfalWorker();
         uint32_t card_found = rfid_cycle();
-        if (card_found) {
+        uint32_t time_cur = tim1s_get();
+        if (card_found && (time_cur - time_card_found > 4)) {
+            time_card_found = time_cur;
             platformLog("ISO14443A/NFC-A, UID: %s\n",
                         hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
             uint32_t is_valid = key_is_valid(&rfid_card_uid);
             struct access acc = {
                 .uid = rfid_card_uid,
-                .time_ms = LL_TIM_GetCounter(TIM2) / 1024,
+                .time_ms = time_cur,
             };
             if (is_valid) {
                 locker_open();
                 acc.uid.raw[0] |= 0x80;
+            } else {
+                locker_view_ban();
             }
             access_circ_add(&access_circ, &acc);
         }

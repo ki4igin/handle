@@ -9,6 +9,7 @@
 #include "usart_ex.h"
 #include "tools.h"
 #include "buf.h"
+#include "tim_ex.h"
 #include "access.h"
 
 #define RESPONSE_DELAY_ON  1
@@ -145,8 +146,8 @@ static uint32_t cmd_write_data()
         } break;
         case CHUNK_ID_ACCESS_TIME: {
             struct chunk_u32 *c = (struct chunk_u32 *)ch;
-            uint32_t new_time = c->data * 1024;
-            LL_TIM_SetCounter(TIM2, new_time);
+            uint32_t new_time = c->data;
+            tim1s_set(new_time);
             add_chunk_u32(&next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
         } break;
         }
