@@ -63,8 +63,6 @@ static void aura_recv_package(void)
     uart_recv_dma(&pack_req, sizeof(struct header));
 }
 
-#define RESP_BUFS_COUNT 3
-
 static struct buf_list resp_list;
 
 static void aura_send_response(uint32_t data_size)
@@ -145,21 +143,6 @@ static void parse_write_chunk(const struct chunk_head *ch,
     }
 }
 
-static uint32_t cmd_write_data()
-{
-    int32_t req_data_size = pack_req.header.data_size;
-    void *next_resp_chunk = pack_resp.data;
-    void *next_req_chunk = pack_req.data;
-    while (req_data_size > 0) {
-        struct chunk_head *ch = (struct chunk_head *)next_req_chunk;
-        uint32_t chunk_size = ch->data_size + sizeof(struct chunk_head);
-        next_req_chunk = (void *)((uint32_t)next_req_chunk + chunk_size);
-        req_data_size -= chunk_size;
-        parse_write_chunk(ch, &next_resp_chunk);
-    }
-    return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
-}
-
 static void parse_read_chunk(const struct chunk_head *ch,
                              void **next_resp_chunk)
 {
@@ -202,20 +185,20 @@ static void parse_read_chunk(const struct chunk_head *ch,
     }
 }
 
-static uint32_t cmd_read_data()
+typedef void (*vfpc_t)(const struct chunk_head *ch, void **next_resp_chunk);
+
+static uint32_t cmd_data(vfpc_t parse_chunk)
 {
     int32_t req_data_size = pack_req.header.data_size;
     void *next_resp_chunk = pack_resp.data;
     void *next_req_chunk = pack_req.data;
-
     while (req_data_size > 0) {
-        const struct chunk_head *ch = (struct chunk_head *)next_req_chunk;
+        struct chunk_head *ch = (struct chunk_head *)next_req_chunk;
         uint32_t chunk_size = ch->data_size + sizeof(struct chunk_head);
         next_req_chunk = (void *)((uint32_t)next_req_chunk + chunk_size);
         req_data_size -= chunk_size;
-        parse_read_chunk(ch, &next_resp_chunk);
+        parse_chunk(ch, &next_resp_chunk);
     }
-
     return (uint32_t)next_resp_chunk - (uint32_t)pack_resp.data;
 }
 
@@ -237,10 +220,11 @@ void aura_cmd_process(void)
         resp_data_size = cmd_status();
     } break;
     case FUNC_REQ_WRITE_DATA: {
-        resp_data_size = cmd_write_data();
+        resp_data_size = cmd_data(parse_write_chunk);
     } break;
     case FUNC_REQ_READ_DATA: {
-        resp_data_size = cmd_read_data();
+        resp_data_size = cmd_data(parse_read_chunk);
+        ;
     } break;
     default: {
         aura_recv_package();
