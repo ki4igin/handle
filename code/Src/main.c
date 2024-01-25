@@ -25,8 +25,8 @@ uint32_t globalCommProtectCnt = 0;
  */
 int main(void)
 {
-    /* MCU Configuration--------------------------------------------------------*/
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    /* MCU Configuration------------------------------------------------------*/
+    /* Reset of all peripherals, Initializes the Flash and the Systick.       */
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
@@ -46,9 +46,6 @@ int main(void)
 
     platformLog("Welcome to aura\n");
     LL_mDelay(100);
-
-    // st25r3911SetRegisterBits(0x00, 0b101);
-    // st25r3911SetRegisterBits(0x02, 0b10000000);
     locker_close();
 
     /* Initialize RFAL */
@@ -59,24 +56,12 @@ int main(void)
             gpio_ledb_toggle();
             gpio_ledr_toggle();
             gpio_ledg_toggle();
-
             platformDelay(500);
         }
     }
 
-    for (uint32_t i = 0; i < 10; i++) {
-        uint8_t tmp;
-        st25r3911ReadRegister(i, &tmp);
-        platformLog("reg %d: %s\n", i, hex2Str(&tmp, 1));
-        LL_mDelay(100);
-    }
-
     st25r3911ExecuteCommand(ST25R3911_CMD_CALIBRATE_C_SENSOR);
     LL_mDelay(100);
-
-    platformLogReg(0x2F);
-    platformLogReg(0x2E);
-
     keys_init();
     aura_init();
 
@@ -139,30 +124,3 @@ void SystemClock_Config(void)
     LL_SetSystemCoreClock(43392000);
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_PCLK1);
 }
-
-/**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
-// void Error_Handler(void)
-// {
-//     /* User can add his own implementation to report the HAL error return state */
-//     __disable_irq();
-//     while (1) {
-//     }
-// }
-
-#ifdef USE_FULL_ASSERT
-/**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-    /* User can add his own implementation to report the file name and line number,
-       ex: printf("Wrong parameters value: file %s on line %d\n", file, line) */
-}
-#endif /* USE_FULL_ASSERT */
