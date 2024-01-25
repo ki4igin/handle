@@ -10,7 +10,7 @@ struct access {
     uint32_t time_ms;
 };
 
-extern struct circ access_circ;
+extern struct circ *const access_circ;
 
 circ_func_define(access, struct access)
 

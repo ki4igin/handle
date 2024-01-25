@@ -101,7 +101,7 @@ int main(void)
             } else {
                 locker_view_ban();
             }
-            access_circ_add(&access_circ, &acc);
+            access_circ_add(access_circ, &acc);
         }
 
         aura_cmd_process();
