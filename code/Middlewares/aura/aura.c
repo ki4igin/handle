@@ -39,8 +39,8 @@ enum func {
 
 static_assert(sizeof(struct header) == 20, "Error in struct header");
 
-uint32_t flags_pack_received = 0;
-uint32_t uid = 0;
+static uint32_t flags_pack_received = 0;
+static uint32_t uid = 0;
 
 static struct {
     struct header header;

@@ -1,4 +1,5 @@
 #include "usart_ex.h"
+#include "debug.h"
 #include "stm32f0xx_ll_dma.h"
 #include "stm32f0xx_ll_usart.h"
 
@@ -35,6 +36,11 @@ void uart_stop_recv(void)
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_3);
     LL_USART_DisableRxTimeout(USART1);
     LL_DMA_ClearFlag_GI3(DMA1);
+}
+
+void debug_send(void *p, uint32_t size)
+{
+    uart_send_dma(p, size);
 }
 
 __WEAK void uart_send_dma_callback(void)

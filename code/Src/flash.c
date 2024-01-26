@@ -1,4 +1,5 @@
 #include "stm32f0xx.h"
+#include "debug.h"
 
 #ifndef FLASH_KEY1
 #define FLASH_KEY1 0x45670123U
@@ -25,6 +26,16 @@ static void flash_clear_err(void)
     FLASH->SR |= FLASH_SR_PGERR | FLASH_SR_WRPRTERR | FLASH_SR_WRPERR;
 }
 
+static void flash_wait_op(void)
+{
+    while ((FLASH->SR & FLASH_SR_EOP) != FLASH_SR_EOP) {
+        if (FLASH->SR & (FLASH_SR_WRPERR | FLASH_SR_PGERR | FLASH_SR_WRPRTERR)) {
+            debug_error_handler();
+        }
+    }
+    FLASH->SR |= FLASH_SR_EOP;
+}
+
 static void flash_program_u16(uint32_t adr, uint16_t data)
 {
     while (FLASH->SR & FLASH_SR_BSY) {
@@ -32,11 +43,7 @@ static void flash_program_u16(uint32_t adr, uint16_t data)
     }
 
     *(__IO uint16_t *)adr = data;
-
-    while ((FLASH->SR & FLASH_SR_EOP) != FLASH_SR_EOP) {
-        ;
-    }
-    FLASH->SR |= FLASH_SR_EOP;
+    flash_wait_op();
 }
 
 void flash_erase_page(uint32_t page_addr)
@@ -52,10 +59,7 @@ void flash_erase_page(uint32_t page_addr)
     FLASH->AR = page_addr;
     FLASH->CR |= FLASH_CR_STRT;
 
-    while ((FLASH->SR & FLASH_SR_EOP) != FLASH_SR_EOP) {
-        ;
-    }
-    FLASH->SR |= FLASH_SR_EOP;
+    flash_wait_op();
 
     FLASH->CR &= ~FLASH_CR_PER;
     flash_lock();

@@ -2,8 +2,8 @@
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
-#include "tim_ex.h"
 #include "usart.h"
+#include "usart_ex.h"
 #include "gpio.h"
 #include "rfid.h"
 #include "rfal_rf.h"
@@ -52,11 +52,10 @@ int main(void)
     rfalAnalogConfigInitialize();
     if (rfalInitialize() != ERR_NONE) {
         /* Initialization failed - indicate on LEDs */
-        while (1) {
-            gpio_ledb_toggle();
-            gpio_ledr_toggle();
-            gpio_ledg_toggle();
+        for (uint32_t i = 0; i < 10; i++) {
+            gpio_led_all_toggle();
             platformDelay(500);
+            NVIC_SystemReset();
         }
     }
 
