@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "memcpy.h"
-#include "access.h"
 
 struct circ {
     const size_t mask;

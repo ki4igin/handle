@@ -9,14 +9,19 @@ struct fifo {
     const size_t mask;
     size_t head;
     size_t tail;
-    const size_t *data;
+    size_t data[];
 };
 
-#define fifo_declare(_name, _type, _count)                                     \
-    static size_t                                                              \
-        _name##_fifo_storage[sizeof(_type) * (_count) / sizeof(size_t)] = {0}; \
-    struct fifo                                                                \
-        _name##_fifo = {.mask = (_count)-1, .data = _name##_fifo_storage}
+// clang-format off
+#define fifo_declare(_name, _type, _count)            \
+    struct fifo *const                                \
+        _name##_fifo = (struct fifo *const)&(struct { \
+            const size_t mask;                        \
+            size_t head;                              \
+            size_t tail;                              \
+            _type data[_count];                       \
+        }){.mask = (_count)-1}
+// clang-format on
 
 inline static size_t fifo_is_empty(struct fifo *f)
 {
