@@ -11,6 +11,7 @@
 #include "buf.h"
 #include "tim_ex.h"
 #include "access.h"
+#include "err.h"
 
 #define RESPONSE_DELAY_ON  1
 
@@ -108,11 +109,18 @@ static void parse_write_chunk(const struct chunk_head *ch,
                               void **next_resp_chunk)
 {
     switch (ch->id) {
+    case CHUNK_ID_ERR: {
+        struct chunk_u16 *c = (struct chunk_u16 *)ch;
+        uint16_t mask = c->data;
+        err.raw &= mask;
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
+    } break;
     case CHUNK_ID_SAVED_CARDS: {
         struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
         uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
         struct keys_res res = keys_save(c->data, count);
-        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, res.err);
+        err.raw = res.err;
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
         add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, res.val);
     } break;
     case CHUNK_ID_STATUS_LOCKER: {
@@ -180,6 +188,13 @@ static void parse_read_chunk(const struct chunk_head *ch,
             struct access *acc = access_circ_get_from_end(access_circ, idx);
             add_chunk_acc(next_resp_chunk, acc);
         }
+    } break;
+    case CHUNK_ID_ERR: {
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
+    } break;
+    case CHUNK_ID_SAVED_CARD_COUNT: {
+        uint16_t data = keys_get_count();
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, data);
     } break;
     default:
     }
