@@ -108,12 +108,12 @@ static void parse_write_chunk(const struct chunk_head *ch,
                               void **next_resp_chunk)
 {
     switch (ch->id) {
-    case CHUNK_ID_CARD_UID_ARR_WRITE: {
+    case CHUNK_ID_SAVED_CARDS: {
         struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
         uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
         struct keys_res res = keys_save(c->data, count);
         add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, res.err);
-        add_chunk_u16(next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, res.val);
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, res.val);
     } break;
     case CHUNK_ID_STATUS_LOCKER: {
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
@@ -125,13 +125,13 @@ static void parse_write_chunk(const struct chunk_head *ch,
         uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
         add_chunk_u16(next_resp_chunk, CHUNK_ID_STATUS_LOCKER, data);
     } break;
-    case CHUNK_ID_CARD_CLEAR: {
+    case CHUNK_ID_CLEAR_SAVED_CARD: {
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         if (c->data == 0x00FF) {
             keys_clear();
         }
         uint16_t data = keys_get_count();
-        add_chunk_u16(next_resp_chunk, CHUNK_ID_CARD_SAVE_COUNT, data);
+        add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, data);
     } break;
     case CHUNK_ID_ACCESS_TIME: {
         struct chunk_u32 *c = (struct chunk_u32 *)ch;
@@ -147,11 +147,11 @@ static void parse_read_chunk(const struct chunk_head *ch,
                              void **next_resp_chunk)
 {
     switch (ch->id) {
-    case CHUNK_ID_CARD_RANGE: {
+    case CHUNK_ID_SAVED_CARDS: {
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         struct keys_range keys = keys_get_cards(c->data & 0xFF, c->data >> 8);
         add_chunk_head(next_resp_chunk,
-                       CHUNK_ID_CARD_UID_ARR_READ,
+                       CHUNK_ID_SAVED_CARDS,
                        CHUNK_TYPE_CARD_UID_ARR,
                        keys.size);
         uint32_t header_chunk_size = sizeof(struct header)
@@ -170,7 +170,7 @@ static void parse_read_chunk(const struct chunk_head *ch,
         }
         // clang-format on
     } break;
-    case CHUNK_ID_ACCESS_COUNT: {
+    case CHUNK_ID_ACCESS: {
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         uint32_t offset = c->data & 0xFF;
         uint32_t count = (c->data >> 8);
