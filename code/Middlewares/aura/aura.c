@@ -115,7 +115,7 @@ static void parse_write_chunk(const struct chunk_head *ch,
         err.raw &= mask;
         add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
     } break;
-    case CHUNK_ID_SAVED_CARDS: {
+    case CHUNK_ID_CARDS_TO_WRITE: {
         struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
         uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
         struct keys_res res = keys_save(c->data, count);
@@ -155,11 +155,11 @@ static void parse_read_chunk(const struct chunk_head *ch,
                              void **next_resp_chunk)
 {
     switch (ch->id) {
-    case CHUNK_ID_SAVED_CARDS: {
+    case CHUNK_ID_READ_CARDS: {
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         struct keys_range keys = keys_get_cards(c->data & 0xFF, c->data >> 8);
         add_chunk_head(next_resp_chunk,
-                       CHUNK_ID_SAVED_CARDS,
+                       CHUNK_ID_CARDS_TO_READ,
                        CHUNK_TYPE_CARD_UID_ARR,
                        keys.size);
         uint32_t header_chunk_size = sizeof(struct header)
@@ -178,7 +178,7 @@ static void parse_read_chunk(const struct chunk_head *ch,
         }
         // clang-format on
     } break;
-    case CHUNK_ID_ACCESS: {
+    case CHUNK_ID_GET_ACCESS: {
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         uint32_t offset = c->data & 0xFF;
         uint32_t count = (c->data >> 8);

@@ -14,14 +14,24 @@ enum chunk_id {
 
     CHUNK_ID_STATUS_LOCKER = 4,
 
-    CHUNK_ID_SAVED_CARDS = 5,
-    CHUNK_ID_SAVED_CARD_COUNT = 6,
-    CHUNK_ID_CLEAR_SAVED_CARD = 7,
+    CHUNK_ID_LAST_CARD = 5,
 
-    CHUNK_ID_ACCESS = 8,
-    CHUNK_ID_ACCESS_CARD = 9,
-    CHUNK_ID_ACCESS_VALID = 10,
+    CHUNK_ID_CARDS_TO_WRITE = 6,
+    CHUNK_ID_CARDS_TO_READ = 7,
+    CHUNK_ID_READ_CARDS = 8,
+
+    CHUNK_ID_SAVED_CARD_COUNT = 9,
+    CHUNK_ID_CLEAR_SAVED_CARD = 10,
+
     CHUNK_ID_ACCESS_TIME = 11,
+    CHUNK_ID_ACCESS = 12,
+    CHUNK_ID_GET_ACCESS = 13,
+    CHUNK_ID_ACCESS_ARR = 14,
+    // CHUNK_ID_SAVED_CARDS = 5,
+    // CHUNK_ID_SAVED_CARD_COUNT = 6,
+
+    // CHUNK_ID_ACCESS_CARD = 9,
+    // CHUNK_ID_ACCESS_VALID = 10,
 };
 
 enum chunk_data_type {
@@ -47,6 +57,8 @@ enum chunk_data_type {
     CHUNK_TYPE_CARD_UID = 19,
     CHUNK_TYPE_CARD_UID_ARR = 20,
     CHUNK_TYPE_CARD_RANGE = 21,
+    CHUNK_TYPE_ACCESS = 22,
+    CHUNK_TYPE_ACCESS_ARR = 23,
 };
 
 struct chunk_head {
@@ -118,17 +130,17 @@ inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 
 inline static void add_chunk_card_uid(void **chunk, union rfid_card_uid *val)
 {
-    add_chunk(chunk, CHUNK_ID_ACCESS_CARD, CHUNK_TYPE_CARD_UID, sizeof(*val), val);
+    add_chunk(chunk, CHUNK_ID_LAST_CARD, CHUNK_TYPE_CARD_UID, sizeof(*val), val);
 }
 
 inline static void add_chunk_acc(void **chunk, struct access *acc)
 {
-    union rfid_card_uid uid = acc->uid;
-    uint32_t is_valid = (uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
-    uid.raw[0] &= ~0x80;
-    add_chunk_card_uid(chunk, &uid);
-    add_chunk_u32(chunk, CHUNK_ID_ACCESS_TIME, acc->time_ms);
-    add_chunk_u16(chunk, CHUNK_ID_ACCESS_VALID, is_valid);
+    uint16_t is_valid = (acc->uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
+    struct access_pack pack = {
+        .acc = *acc,
+        .is_valid = is_valid,
+    };
+    add_chunk(chunk, CHUNK_ID_ACCESS, CHUNK_TYPE_ACCESS, sizeof(pack), &pack);
 }
 
 #endif
