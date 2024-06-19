@@ -14,7 +14,7 @@ enum chunk_id {
 
     CHUNK_ID_STATUS_LOCKER = 4,
 
-    CHUNK_ID_LAST_CARD = 5,
+    CHUNK_ID_NEW_ACCESS_COUNT = 5,
 
     CHUNK_ID_CARDS_TO_WRITE = 6,
     CHUNK_ID_CARDS_TO_READ = 7,
@@ -126,11 +126,6 @@ inline static void add_chunk_u16(void **chunk, enum chunk_id id, uint16_t val)
 inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 {
     add_chunk(chunk, id, CHUNK_TYPE_U32, sizeof(val), &val);
-}
-
-inline static void add_chunk_card_uid(void **chunk, union rfid_card_uid *val)
-{
-    add_chunk(chunk, CHUNK_ID_LAST_CARD, CHUNK_TYPE_CARD_UID, sizeof(*val), val);
 }
 
 inline static void add_chunk_acc(void **chunk, struct access *acc)

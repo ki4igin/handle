@@ -76,6 +76,7 @@ int main(void)
                         hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
             uint32_t is_valid = key_is_valid(&rfid_card_uid);
             struct access acc = {
+                .acc_uid = ++access_cur_uid,
                 .uid = rfid_card_uid,
                 .time_ms = time_cur,
             };
