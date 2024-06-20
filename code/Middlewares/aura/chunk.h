@@ -26,7 +26,7 @@ enum chunk_id {
     CHUNK_ID_ACCESS_TIME = 11,
     CHUNK_ID_ACCESS = 12,
     CHUNK_ID_GET_ACCESS = 13,
-    CHUNK_ID_ACCESS_ARR = 14,
+    CHUNK_ID_SET_LAST_UID_ACCESS = 14,
     // CHUNK_ID_SAVED_CARDS = 5,
     // CHUNK_ID_SAVED_CARD_COUNT = 6,
 
@@ -58,7 +58,6 @@ enum chunk_data_type {
     CHUNK_TYPE_CARD_UID_ARR = 20,
     CHUNK_TYPE_CARD_RANGE = 21,
     CHUNK_TYPE_ACCESS = 22,
-    CHUNK_TYPE_ACCESS_ARR = 23,
 };
 
 struct chunk_head {
@@ -130,11 +129,12 @@ inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 
 inline static void add_chunk_acc(void **chunk, struct access *acc)
 {
-    uint16_t is_valid = (acc->uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
+    uint16_t is_valid = (acc->card_uid.raw[0] & 0x80) ? 0x00FF : 0x0000;
     struct access_pack pack = {
-        .acc = *acc,
         .is_valid = is_valid,
     };
+    pack.acc = *acc;
+    pack.acc.card_uid.raw[0] &= ~0x80;
     add_chunk(chunk, CHUNK_ID_ACCESS, CHUNK_TYPE_ACCESS, sizeof(pack), &pack);
 }
 

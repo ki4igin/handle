@@ -43,29 +43,49 @@ inline static size_t fifo_is_full(struct fifo *f)
         _f->_ht = (_f->_ht + 1) & _f->mask; \
     } while (0)
 
-#define fifo_func_define(_prefix, _type)                               \
-    inline static void                                                 \
-        _prefix##fifo_push_unchecked(struct fifo *f, _type *data)      \
-    {                                                                  \
-        const size_t len = sizeof(_type) / sizeof(size_t);             \
-        memcpy128(sizeof(_type), data, &f->data[f->head * len]);       \
-        fifo_inc(f, _type, head);                                      \
-    }                                                                  \
-                                                                       \
-    inline static void _prefix##fifo_push(struct fifo *f, _type *data) \
-    {                                                                  \
-        if (fifo_is_full(f)) {                                         \
-            fifo_inc(f, _type, tail);                                  \
-        }                                                              \
-        _prefix##fifo_push_unchecked(f, data);                         \
-    }                                                                  \
-                                                                       \
-    inline static _type *_prefix##fifo_pop(struct fifo *f)             \
-    {                                                                  \
-        const size_t len = sizeof(_type) / sizeof(size_t);             \
-        _type *p = (_type *)&f->data[f->tail * len];                   \
-        fifo_inc(f, _type, tail);                                      \
-        return p;                                                      \
+#define fifo_func_define(_prefix, _type)                                  \
+    inline static void                                                    \
+        _prefix##_fifo_push_unchecked(struct fifo *f, _type *data)         \
+    {                                                                     \
+        const size_t len = sizeof(_type) / sizeof(size_t);                \
+        memcpy128(sizeof(_type), data, &f->data[f->head * len]);          \
+        fifo_inc(f, _type, head);                                         \
+    }                                                                     \
+                                                                          \
+    inline static void _prefix##_fifo_push(struct fifo *f, _type *data)    \
+    {                                                                     \
+        if (fifo_is_full(f)) {                                            \
+            fifo_inc(f, _type, tail);                                     \
+        }                                                                 \
+        _prefix##_fifo_push_unchecked(f, data);                            \
+    }                                                                     \
+                                                                          \
+    inline static _type *_prefix##_fifo_pop(struct fifo *f)                \
+    {                                                                     \
+        const size_t len = sizeof(_type) / sizeof(size_t);                \
+        _type *p = (_type *)&f->data[f->tail * len];                      \
+        fifo_inc(f, _type, tail);                                         \
+        return p;                                                         \
+    }                                                                     \
+                                                                          \
+    inline static _type *_prefix##_fifo_get(struct fifo *f, size_t idx)    \
+    {                                                                     \
+        const size_t len = sizeof(_type) / sizeof(size_t);                \
+        idx = (idx + f->tail) & f->mask;                                  \
+        _type *p = (_type *)&f->data[idx * len];                          \
+        return p;                                                         \
+    }                                                                     \
+                                                                          \
+    inline static void _prefix##_fifo_mov_head(struct fifo *f, size_t idx) \
+    {                                                                     \
+        idx &= f->mask;                                                   \
+        f->head = idx;                                                    \
+    }                                                                     \
+                                                                          \
+    inline static void _prefix##_fifo_mov_tail(struct fifo *f, size_t idx) \
+    {                                                                     \
+        idx &= f->mask;                                                   \
+        f->tail = idx;                                                    \
     }
 
 #endif

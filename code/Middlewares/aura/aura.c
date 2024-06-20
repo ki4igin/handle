@@ -100,8 +100,8 @@ static uint32_t cmd_status(void)
     void *next_chunk = pack_resp.data;
     uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
     add_chunk_u16(&next_chunk, CHUNK_ID_STATUS_LOCKER, data);
-    struct access *acc = access_circ_get_last(access_circ);
-    add_chunk_acc(&next_chunk, acc);
+    uint16_t acc_cnt = access_get_non_read_count();
+    add_chunk_u16(&next_chunk, CHUNK_ID_NEW_ACCESS_COUNT, acc_cnt);
     return (uint32_t)next_chunk - (uint32_t)pack_resp.data;
 }
 
@@ -147,6 +147,11 @@ static void parse_write_chunk(const struct chunk_head *ch,
         tim1s_set(new_time);
         add_chunk_u32(next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
     } break;
+    case CHUNK_ID_SET_LAST_UID_ACCESS: {
+        struct chunk_u32 *c = (struct chunk_u32 *)ch;
+        access_set_last_read_uid(c->data);
+        add_chunk_u32(next_resp_chunk, CHUNK_ID_SET_LAST_UID_ACCESS, c->data);
+    } break;
     default:
     }
 }
@@ -182,11 +187,15 @@ static void parse_read_chunk(const struct chunk_head *ch,
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         uint32_t offset = c->data & 0xFF;
         uint32_t count = (c->data >> 8);
-        count = (count < 8) ? count : 8;
-        for (uint32_t i = 0; i < count; i++) {
-            uint32_t idx = i + offset;
-            struct access *acc = access_circ_get_from_end(access_circ, idx);
-            add_chunk_acc(next_resp_chunk, acc);
+        uint32_t non_read_count = access_get_non_read_count();
+        if ((offset + count) > non_read_count) {
+            add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, 0x04);
+        } else {
+            for (uint32_t i = 0; i < count; i++) {
+                uint32_t idx = i + offset;
+                struct access *acc = access_fifo_get(access_fifo, idx);
+                add_chunk_acc(next_resp_chunk, acc);
+            }
         }
     } break;
     case CHUNK_ID_ERR: {

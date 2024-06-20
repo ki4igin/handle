@@ -45,6 +45,12 @@ int main(void)
     MX_TIM14_Init();
 
     platformLog("Welcome to aura\n");
+
+    // нужно чтобы UID ACCESS соответствовал номеру в буфере, так для первой к
+    // он будет равен 1
+    struct access acc = {0};
+    access_fifo_push_unchecked(access_fifo, &acc);
+        
     LL_mDelay(100);
     locker_close();
 
@@ -75,18 +81,14 @@ int main(void)
             platformLog("ISO14443A/NFC-A, UID: %s\n",
                         hex2Str(rfid_card_uid.val, sizeof(rfid_card_uid.val)));
             uint32_t is_valid = key_is_valid(&rfid_card_uid);
-            struct access acc = {
-                .acc_uid = ++access_cur_uid,
-                .uid = rfid_card_uid,
-                .time_ms = time_cur,
-            };
+            struct access acc = access_create(rfid_card_uid, time_cur);
             if (is_valid) {
                 locker_open();
-                acc.uid.raw[0] |= 0x80;
+                acc.card_uid.raw[0] |= 0x80;
             } else {
                 locker_view_ban();
             }
-            access_circ_add(access_circ, &acc);
+            access_fifo_push(access_fifo, &acc);
         }
 
         aura_cmd_process();
