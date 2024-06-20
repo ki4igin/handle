@@ -6,6 +6,13 @@
 #include "access.h"
 #include "tools.h"
 
+enum chunk_err {
+    CHUNK_ERR_NONE = 0,
+    CHUNK_ERR_DOUBLE_CARD,
+    CHUNK_ERR_OVERHEAD_COUNT_CARD,
+    CHUNK_ERR_NON_VALID_RANGE,
+};
+
 enum chunk_id {
     CHUNK_ID_TYPE_SENSOR = 1,
     CHUNK_ID_UIDS_ARRAY = 2,
@@ -125,6 +132,11 @@ inline static void add_chunk_u16(void **chunk, enum chunk_id id, uint16_t val)
 inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 {
     add_chunk(chunk, id, CHUNK_TYPE_U32, sizeof(val), &val);
+}
+
+inline static void add_chunk_err(void **chunk, enum chunk_err err)
+{
+    add_chunk(chunk, CHUNK_ID_ERR, CHUNK_TYPE_U16, 2, &err);
 }
 
 inline static void add_chunk_acc(void **chunk, struct access *acc)

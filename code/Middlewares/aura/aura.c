@@ -109,18 +109,17 @@ static void parse_write_chunk(const struct chunk_head *ch,
                               void **next_resp_chunk)
 {
     switch (ch->id) {
-    case CHUNK_ID_ERR: {
-        struct chunk_u16 *c = (struct chunk_u16 *)ch;
-        uint16_t mask = c->data;
-        err.raw &= mask;
-        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
-    } break;
     case CHUNK_ID_CARDS_TO_WRITE: {
         struct chunk_card_uid_arr *c = (struct chunk_card_uid_arr *)ch;
         uint32_t count = c->head.data_size / sizeof(union rfid_card_uid);
         struct keys_res res = keys_save(c->data, count);
         err.raw = res.err;
-        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
+        if (res.err & 0x01) {
+            add_chunk_err(next_resp_chunk, CHUNK_ERR_DOUBLE_CARD);
+        }
+        if (res.err & 0x02) {
+            add_chunk_err(next_resp_chunk, CHUNK_ERR_OVERHEAD_COUNT_CARD);
+        }
         add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, res.val);
     } break;
     case CHUNK_ID_STATUS_LOCKER: {
