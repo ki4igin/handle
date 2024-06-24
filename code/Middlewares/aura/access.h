@@ -16,20 +16,13 @@ struct access_pack {
     uint16_t is_valid;
 };
 
-extern uint32_t access_cur_uid;
 extern struct fifo *const access_fifo;
 
-inline static struct access access_create(union rfid_card_uid u, uint32_t time_ms)
-{
-    return (struct access){
-        .acc_uid = ++access_cur_uid,
-        .card_uid = u,
-        .time_ms = time_ms,
-    };
-}
-
+struct access access_create(union rfid_card_uid u, uint32_t time_ms);
 uint32_t access_get_non_read_count(void);
-void access_set_last_read_uid(uint32_t uid);
+uint32_t access_set_last_read_uid(uint32_t uid);
+uint32_t access_get_last_read_uid(void);
+uint32_t access_get_cur_uid(void);
 
 fifo_func_define(access, struct access)
 

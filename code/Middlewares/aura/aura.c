@@ -128,6 +128,8 @@ static void parse_write_chunk(const struct chunk_head *ch,
             locker_open();
         } else if (c->data == 0x0000) {
             locker_close();
+        } else {
+            add_chunk_err(next_resp_chunk, CHUNK_ERR_CMD_ARG);
         }
         uint16_t data = locker_is_open() ? 0x00FF : 0x0000;
         add_chunk_u16(next_resp_chunk, CHUNK_ID_STATUS_LOCKER, data);
@@ -136,6 +138,8 @@ static void parse_write_chunk(const struct chunk_head *ch,
         struct chunk_u16 *c = (struct chunk_u16 *)ch;
         if (c->data == 0x00FF) {
             keys_clear();
+        } else {
+            add_chunk_err(next_resp_chunk, CHUNK_ERR_CMD_ARG);
         }
         uint16_t data = keys_get_count();
         add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, data);
@@ -146,10 +150,16 @@ static void parse_write_chunk(const struct chunk_head *ch,
         tim1s_set(new_time);
         add_chunk_u32(next_resp_chunk, CHUNK_ID_ACCESS_TIME, new_time);
     } break;
-    case CHUNK_ID_SET_LAST_UID_ACCESS: {
+    case CHUNK_ID_LAST_UID_ACCESS: {
         struct chunk_u32 *c = (struct chunk_u32 *)ch;
-        access_set_last_read_uid(c->data);
-        add_chunk_u32(next_resp_chunk, CHUNK_ID_SET_LAST_UID_ACCESS, c->data);
+        uint32_t is_valid_uid = access_set_last_read_uid(c->data);
+        if (is_valid_uid == 0) {
+            add_chunk_err(next_resp_chunk, CHUNK_ERR_ACC_LAST_UID);
+        }
+        uint32_t last = access_get_last_read_uid();
+        uint32_t cur = access_get_cur_uid();
+        add_chunk_u32(next_resp_chunk, CHUNK_ID_LAST_UID_ACCESS, last);
+        add_chunk_u32(next_resp_chunk, CHUNK_ID_CUR_UID_ACCESS, cur);
     } break;
     default:
     }
@@ -196,9 +206,6 @@ static void parse_read_chunk(const struct chunk_head *ch,
                 add_chunk_acc(next_resp_chunk, acc);
             }
         }
-    } break;
-    case CHUNK_ID_ERR: {
-        add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, err.raw);
     } break;
     case CHUNK_ID_SAVED_CARD_COUNT: {
         uint16_t data = keys_get_count();
