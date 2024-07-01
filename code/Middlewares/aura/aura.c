@@ -13,7 +13,7 @@
 #include "access.h"
 #include "err.h"
 
-#define RESPONSE_DELAY_ON  1
+#define RESPONSE_DELAY_ON  0
 
 #define AURA_HANDLE_ID     7
 #define AURA_MAX_DATA_SIZE 256
