@@ -198,7 +198,7 @@ static void parse_read_chunk(const struct chunk_head *ch,
         uint32_t count = (c->data >> 8);
         uint32_t non_read_count = access_get_non_read_count();
         if ((offset + count) > non_read_count) {
-            add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, 0x04);
+            add_chunk_u16(next_resp_chunk, CHUNK_ID_ERR, CHUNK_ERR_NON_VALID_RANGE);
         } else {
             for (uint32_t i = 0; i < count; i++) {
                 uint32_t idx = i + offset;
