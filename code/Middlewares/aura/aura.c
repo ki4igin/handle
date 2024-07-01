@@ -162,6 +162,7 @@ static void parse_write_chunk(const struct chunk_head *ch,
         add_chunk_u32(next_resp_chunk, CHUNK_ID_CUR_UID_ACCESS, cur);
     } break;
     default:
+        break;
     }
 }
 
@@ -212,6 +213,7 @@ static void parse_read_chunk(const struct chunk_head *ch,
         add_chunk_u16(next_resp_chunk, CHUNK_ID_SAVED_CARD_COUNT, data);
     } break;
     default:
+        break;
     }
 }
 

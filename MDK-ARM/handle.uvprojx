@@ -564,6 +564,11 @@
               <FileType>1</FileType>
               <FilePath>..\code\Src\flash.c</FilePath>
             </File>
+            <File>
+              <FileName>debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\Src\debug.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -653,6 +658,11 @@
               <FileName>access.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\Middlewares\aura\access.c</FilePath>
+            </File>
+            <File>
+              <FileName>err.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\Middlewares\aura\err.c</FilePath>
             </File>
           </Files>
         </Group>
