@@ -46,10 +46,7 @@ int main(void)
 
     platformLog("Welcome to aura\n");
 
-    // нужно чтобы UID ACCESS соответствовал номеру в буфере, так для первой к
-    // он будет равен 1
-    struct access acc = {0};
-    access_fifo_push_unchecked(access_fifo, &acc);
+    access_init();
         
     LL_mDelay(100);
     locker_close();

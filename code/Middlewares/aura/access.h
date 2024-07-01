@@ -18,6 +18,7 @@ struct access_pack {
 
 extern struct fifo *const access_fifo;
 
+void access_init(void);
 struct access access_create(union rfid_card_uid u, uint32_t time_ms);
 uint32_t access_get_non_read_count(void);
 uint32_t access_set_last_read_uid(uint32_t uid);
