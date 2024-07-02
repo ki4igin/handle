@@ -139,7 +139,7 @@ inline static void add_chunk_u32(void **chunk, enum chunk_id id, uint32_t val)
 
 inline static void add_chunk_err(void **chunk, enum chunk_err err)
 {
-    add_chunk(chunk, CHUNK_ID_ERR, CHUNK_TYPE_U16, 2, &err);
+    add_chunk_u16(chunk, CHUNK_ID_ERR, err);
 }
 
 inline static void add_chunk_acc(void **chunk, struct access *acc)
